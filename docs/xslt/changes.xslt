@@ -14,14 +14,15 @@
 
 
 <xsl:template match="/"> <xsl:apply-templates select="change_log"/> </xsl:template>
-<xsl:template match="change_log"> <xsl:apply-templates select="changes"/> </xsl:template>
+<xsl:template match="change_log"> <xsl:apply-templates select="section"/> </xsl:template>
+<xsl:template match="section"> <xsl:apply-templates select="changes"/> </xsl:template>
 
 
 <xsl:template match="changes">
     <xsl:text>&#10;</xsl:text>
 
     <xsl:value-of select="substring(concat($conf/changes[@lang=$lang]/title,
-                       //change_log/@title,
+                       ../@title,
                        ' ', @ver,
                        '                                                    '),
                 1, $conf/changes[@lang=$lang]/length)"/>
