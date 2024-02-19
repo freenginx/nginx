@@ -115,11 +115,13 @@ ngx_http_v2_header_filter(ngx_http_request_t *r)
     ngx_http_core_srv_conf_t  *cscf;
     u_char                     addr[NGX_SOCKADDR_STRLEN];
 
-    static const u_char nginx[5] = "\x84\xaa\x63\x55\xe7";
 #if (NGX_HTTP_GZIP)
     static const u_char accept_encoding[12] =
         "\x8b\x84\x84\x2d\x69\x5b\x05\x44\x3c\x86\xaa\x6f";
 #endif
+
+    static size_t nginx_name_len = ngx_http_v2_literal_size(NGINX_NAME);
+    static u_char nginx_name[ngx_http_v2_literal_size(NGINX_VER)];
 
     static size_t nginx_ver_len = ngx_http_v2_literal_size(NGINX_VER);
     static u_char nginx_ver[ngx_http_v2_literal_size(NGINX_VER)];
@@ -226,7 +228,7 @@ ngx_http_v2_header_filter(ngx_http_request_t *r)
             len += 1 + nginx_ver_build_len;
 
         } else {
-            len += 1 + sizeof(nginx);
+            len += 1 + nginx_name_len;
         }
     }
 
@@ -434,8 +436,9 @@ ngx_http_v2_header_filter(ngx_http_request_t *r)
                            NGINX_VER_BUILD);
 
         } else {
-            ngx_log_debug0(NGX_LOG_DEBUG_HTTP, fc->log, 0,
-                           "http2 output header: \"server: nginx\"");
+            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, fc->log, 0,
+                           "http2 output header: \"server: %s\"",
+                           NGINX_NAME);
         }
 
         *pos++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_SERVER_INDEX);
@@ -460,7 +463,13 @@ ngx_http_v2_header_filter(ngx_http_request_t *r)
             pos = ngx_cpymem(pos, nginx_ver_build, nginx_ver_build_len);
 
         } else {
-            pos = ngx_cpymem(pos, nginx, sizeof(nginx));
+            if (nginx_name[0] == '\0') {
+                p = ngx_http_v2_write_value(nginx_name, (u_char *) NGINX_NAME,
+                                            sizeof(NGINX_NAME) - 1, tmp);
+                nginx_name_len = p - nginx_name;
+            }
+
+            pos = ngx_cpymem(pos, nginx_name, nginx_name_len);
         }
     }
 

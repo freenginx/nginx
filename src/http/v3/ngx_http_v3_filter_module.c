@@ -166,7 +166,7 @@ ngx_http_v3_header_filter(ngx_http_request_t *r)
             n = sizeof(NGINX_VER_BUILD) - 1;
 
         } else {
-            n = sizeof("nginx") - 1;
+            n = sizeof(NGINX_NAME) - 1;
         }
 
         len += ngx_http_v3_encode_field_lri(NULL, 0,
@@ -349,8 +349,8 @@ ngx_http_v3_header_filter(ngx_http_request_t *r)
             n = sizeof(NGINX_VER_BUILD) - 1;
 
         } else {
-            p = (u_char *) "nginx";
-            n = sizeof("nginx") - 1;
+            p = (u_char *) NGINX_NAME;
+            n = sizeof(NGINX_NAME) - 1;
         }
 
         ngx_log_debug2(NGX_LOG_DEBUG_HTTP, c->log, 0,
