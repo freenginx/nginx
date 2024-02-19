@@ -1,7 +1,7 @@
 
 VER=	$(shell grep 'define NGINX_VERSION' src/core/nginx.h		\
 		| sed -e 's/^.*"\(.*\)".*/\1/')
-NGINX=	nginx-$(VER)
+NGINX=	freenginx-$(VER)
 TEMP=	tmp
 XSLS?=	xslscript.pl
 

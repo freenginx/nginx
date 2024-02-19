@@ -1,7 +1,7 @@
 
 VER =		$(shell grep 'define NGINX_VERSION' src/core/nginx.h	\
 			| sed -e 's/^.*"\(.*\)".*/\1/')
-NGINX =		nginx-$(VER)
+NGINX =		freenginx-$(VER)
 TEMP =		tmp
 
 CC =		cl
@@ -34,7 +34,7 @@ export:
 
 
 RELEASE:
-	hg ci -m nginx-$(VER)-RELEASE
+	hg ci -m freenginx-$(VER)-RELEASE
 	hg tag -m "release-$(VER) tag" release-$(VER)
 
 	$(MAKE) -f misc/GNUmakefile release
