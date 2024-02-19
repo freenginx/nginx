@@ -3,8 +3,10 @@
 <!ENTITY  mdash        "&#xA0;- " >
 
 
-<!ELEMENT change_log   (changes)* >
-<!ATTLIST change_log   title  CDATA #REQUIRED >
+<!ELEMENT change_log   (section)* >
+
+<!ELEMENT section      (changes)* >
+<!ATTLIST section      title  CDATA #REQUIRED >
 
 <!ELEMENT changes      (change)* >
 <!ATTLIST changes      ver    CDATA #REQUIRED
