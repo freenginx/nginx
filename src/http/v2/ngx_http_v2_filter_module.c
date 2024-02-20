@@ -121,7 +121,7 @@ ngx_http_v2_header_filter(ngx_http_request_t *r)
 #endif
 
     static size_t nginx_name_len = ngx_http_v2_literal_size(NGINX_NAME);
-    static u_char nginx_name[ngx_http_v2_literal_size(NGINX_VER)];
+    static u_char nginx_name[ngx_http_v2_literal_size(NGINX_NAME)];
 
     static size_t nginx_ver_len = ngx_http_v2_literal_size(NGINX_VER);
     static u_char nginx_ver[ngx_http_v2_literal_size(NGINX_VER)];
