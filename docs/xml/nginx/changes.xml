@@ -7,6 +7,94 @@
 <section title="freenginx">
 
 
+<changes ver="1.25.5" date="2024-04-02">
+
+<change type="change">
+<para lang="ru">
+MIME-тип для расширения bmp изменён на "image/bmp",
+для расширения rar на "application/vnd.rar",
+а для расширений deb и udeb теперь используется
+MIME-тип "application/vnd.debian.binary-package".<br/>
+Спасибо Юрию Изоркину.
+</para>
+<para lang="en">
+MIME type for the "bmp" extension has been changed to "image/bmp",
+for the "rar" extension to "application/vnd.rar",
+and the "deb" and "udeb" extensions now use
+the "application/vnd.debian.binary-package" MIME type.<br/>
+Thanks to Yuriy Izorkin.
+</para>
+</change>
+
+<change type="change">
+<para lang="ru">
+при чтении тела запроса с использованием chunked transfer encoding
+суммарный размер игнорируемых chunk extensions и trailer headers
+теперь ограничен директивой client_max_body_size.<br/>
+Спасибо Bartek Nowotarski.
+</para>
+<para lang="en">
+the "client_max_body_size" directive is now used to limit
+total size of ignored chunk extensions and trailer headers
+when reading a request body using chunked transfer encoding.<br/>
+Thanks to Bartek Nowotarski.
+</para>
+</change>
+
+<change type="change">
+<para lang="ru">
+теперь перед запросом допускается не более одной пустой строки.
+</para>
+<para lang="en">
+now at most one empty line is allowed before a request.
+</para>
+</change>
+
+<change type="feature">
+<para lang="ru">
+ошибки записи в syslog теперь логгируются не чаще одного раза в секунду.
+</para>
+<para lang="en">
+logging to syslog errors are now reported at most once per second.
+</para>
+</change>
+
+<change type="feature">
+<para lang="ru">
+директива max_commands в почтовом прокси-сервере.
+</para>
+<para lang="en">
+the "max_commands" directive in the mail proxy module.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+при использовании директивы "server_tokens off"
+в ответах могло возвращаться некорректное имя сервера.<br/>
+Спасибо Tatsuya Kaneko и Antanas Patašius.
+</para>
+<para lang="en">
+incorrect server name might be returned in responses
+when using the "server_tokens off" directive.<br/>
+Thanks to Tatsuya Kaneko and Antanas Patašius.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+при чтении тела запроса из быстрого соединения
+было возможно чтение в течение долгого времени.
+</para>
+<para lang="en">
+when reading a request body from a fast connection
+reading for a long time was possible.
+</para>
+</change>
+
+</changes>
+
+
 <changes ver="1.25.4" date="2024-02-20">
 
 <change type="change">
