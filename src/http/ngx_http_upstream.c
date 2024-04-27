@@ -2361,6 +2361,7 @@ ngx_http_upstream_read_request_handler(ngx_http_request_t *r)
 
     if (c->read->timedout) {
         c->timedout = 1;
+        ngx_connection_error(c, NGX_ETIMEDOUT, "client timed out");
         ngx_http_upstream_finalize_request(r, u, NGX_HTTP_REQUEST_TIME_OUT);
         return;
     }

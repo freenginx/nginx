@@ -1281,6 +1281,8 @@ ngx_http_v3_read_client_request_body_handler(ngx_http_request_t *r)
     ngx_int_t  rc;
 
     if (r->connection->read->timedout) {
+        ngx_log_error(NGX_LOG_INFO, r->connection->log, NGX_ETIMEDOUT,
+                      "client timed out");
         r->connection->timedout = 1;
         ngx_http_finalize_request(r, NGX_HTTP_REQUEST_TIME_OUT);
         return;
@@ -1300,6 +1302,8 @@ ngx_http_v3_read_unbuffered_request_body(ngx_http_request_t *r)
     ngx_int_t  rc;
 
     if (r->connection->read->timedout) {
+        ngx_log_error(NGX_LOG_INFO, r->connection->log, NGX_ETIMEDOUT,
+                      "client timed out");
         r->connection->timedout = 1;
         return NGX_HTTP_REQUEST_TIME_OUT;
     }

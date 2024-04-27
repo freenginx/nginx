@@ -4285,6 +4285,9 @@ ngx_http_v2_read_unbuffered_request_body(ngx_http_request_t *r)
 
     if (fc->read->timedout) {
         if (stream->recv_window) {
+            ngx_log_error(NGX_LOG_INFO, fc->log, NGX_ETIMEDOUT,
+                          "client timed out");
+
             stream->skip_data = 1;
             fc->timedout = 1;
 
