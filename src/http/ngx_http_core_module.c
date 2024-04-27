@@ -2596,6 +2596,8 @@ ngx_http_named_location(ngx_http_request_t *r, ngx_str_t *name)
                            "using location: %V \"%V?%V\"",
                            name, &r->uri, &r->args);
 
+            r->connection->log->action = NULL;
+
             r->internal = 1;
             r->content_handler = NULL;
             r->uri_changed = 0;
