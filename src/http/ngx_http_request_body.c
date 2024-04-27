@@ -85,6 +85,8 @@ ngx_http_read_client_request_body(ngx_http_request_t *r,
         return NGX_OK;
     }
 
+    r->connection->log->action = "reading request body";
+
 #if (NGX_HTTP_V2)
     if (r->stream) {
         rc = ngx_http_v2_read_request_body(r);
@@ -159,6 +161,7 @@ ngx_http_read_client_request_body(ngx_http_request_t *r,
     if (rb->rest == 0 && rb->last_saved) {
         /* the whole request body was pre-read */
         r->request_body_no_buffering = 0;
+        r->connection->log->action = NULL;
         post_handler(r);
         return NGX_OK;
     }
@@ -217,6 +220,7 @@ done:
         }
 
         r->read_event_handler = ngx_http_block_reading;
+        r->connection->log->action = NULL;
         post_handler(r);
     }
 
@@ -456,6 +460,7 @@ ngx_http_do_read_client_request_body(ngx_http_request_t *r)
 
     if (!r->request_body_no_buffering) {
         r->read_event_handler = ngx_http_block_reading;
+        r->connection->log->action = NULL;
         rb->post_handler(r);
     }
 
