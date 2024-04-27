@@ -46,7 +46,7 @@ ngx_http_read_client_request_body(ngx_http_request_t *r,
         r->request_body_no_buffering = 0;
 
         if (r->request_body && r->request_body->no_buffering) {
-            r->headers_in.content_length_n = 0;
+            r->discard_body = 1;
             r->request_body->bufs = NULL;
 
             if (r->reading_body) {
@@ -244,7 +244,7 @@ done:
     if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
 
         r->lingering_close = 1;
-        r->headers_in.content_length_n = 0;
+        r->discard_body = 1;
         r->request_body->bufs = NULL;
 
         r->main->count--;
@@ -319,7 +319,7 @@ ngx_http_read_client_request_body_handler(ngx_http_request_t *r)
     if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
 
         r->lingering_close = 1;
-        r->headers_in.content_length_n = 0;
+        r->discard_body = 1;
         r->request_body->bufs = NULL;
 
         r->read_event_handler = ngx_http_block_reading;
@@ -679,27 +679,17 @@ ngx_http_discard_request_body(ngx_http_request_t *r)
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http set discard body");
 
+    r->discard_body = 1;
+
 #if (NGX_HTTP_V2)
     if (r->stream) {
         r->stream->skip_data = 1;
-
-        if (r->headers_in.content_length_n > 0 || r->headers_in.chunked) {
-            r->headers_in.content_length_n = 0;
-            r->discard_body = 1;
-        }
-
         return NGX_OK;
     }
 #endif
 
 #if (NGX_HTTP_V3)
     if (r->http_version == NGX_HTTP_VERSION_30) {
-
-        if (r->headers_in.content_length_n > 0 || r->headers_in.chunked) {
-            r->headers_in.content_length_n = 0;
-            r->discard_body = 1;
-        }
-
         return NGX_OK;
     }
 #endif
@@ -717,8 +707,6 @@ ngx_http_discard_request_body(ngx_http_request_t *r)
     if (r->headers_in.content_length_n <= 0 && !r->headers_in.chunked) {
         return NGX_OK;
     }
-
-    r->discard_body = 1;
 
     size = r->header_in->last - r->header_in->pos;
 
