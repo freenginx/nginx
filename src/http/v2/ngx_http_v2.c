@@ -4238,11 +4238,7 @@ ngx_http_v2_read_client_request_body_handler(ngx_http_request_t *r)
         if (window < stream->recv_window) {
             ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
                           "http2 negative window update");
-
-            stream->skip_data = 1;
-
-            ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
-            return;
+            goto error;
         }
 
         return;
@@ -4252,18 +4248,24 @@ ngx_http_v2_read_client_request_body_handler(ngx_http_request_t *r)
                                        window - stream->recv_window)
         == NGX_ERROR)
     {
-        stream->skip_data = 1;
-        ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
-        return;
+        goto error;
     }
 
     stream->recv_window = window;
 
     if (ngx_http_v2_send_output_queue(h2c) == NGX_ERROR) {
-        stream->skip_data = 1;
-        ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
-        return;
+        goto error;
     }
+
+    return;
+
+error:
+
+    stream->skip_data = 1;
+
+    ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
+    return;
+
 }
 
 
