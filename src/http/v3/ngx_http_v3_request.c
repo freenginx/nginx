@@ -1482,7 +1482,6 @@ ngx_http_v3_do_read_client_request_body(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_v3_request_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
-    off_t                      max;
     size_t                     size;
     u_char                    *p;
     ngx_int_t                  rc;
@@ -1508,14 +1507,6 @@ ngx_http_v3_request_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
 
         rb->rest = cscf->large_client_header_buffers.size;
-    }
-
-    clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
-
-    max = r->headers_in.content_length_n;
-
-    if (max == -1 && clcf->client_max_body_size) {
-        max = clcf->client_max_body_size;
     }
 
     out = NULL;
@@ -1575,13 +1566,30 @@ ngx_http_v3_request_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
                 /* rc == NGX_OK */
 
-                if (max != -1 && (uint64_t) (max - rb->received) < st->length) {
+                clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
+
+                if (clcf->client_max_body_size
+                    && (uint64_t) (clcf->client_max_body_size - rb->received)
+                       < st->length)
+                {
                     ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                                   "client intended to send too large "
                                   "body: %O+%ui bytes",
                                   rb->received, st->length);
 
                     return NGX_HTTP_REQUEST_ENTITY_TOO_LARGE;
+                }
+
+                if (r->headers_in.content_length_n != -1
+                    && (uint64_t) (r->headers_in.content_length_n
+                                   - rb->received)
+                       < st->length)
+                {
+                    ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+                                  "client intended to send body data "
+                                  "larger than declared");
+
+                    return NGX_HTTP_BAD_REQUEST;
                 }
 
                 continue;
