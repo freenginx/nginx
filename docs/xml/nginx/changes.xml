@@ -7,6 +7,138 @@
 <section title="freenginx">
 
 
+<changes ver="1.27.0" date="2024-05-14">
+
+<change type="feature">
+<para lang="ru">
+обновлены текстовые описания кодов ответов.<br/>
+Спасибо Michiel W. Beijen.
+</para>
+<para lang="en">
+updated descriptions of HTTP status codes.<br/>
+Thanks to Michiel W. Beijen.
+</para>
+</change>
+
+<change type="change">
+<para lang="ru">
+теперь, если при чтении тела запроса происходит ошибка,
+тело запроса автоматически отбрасывается,
+и при сложной обработке ошибок, в частности при проксировании ошибок,
+не требуется явно запрещать
+передачу тела запроса на проксируемый сервер.
+</para>
+<para lang="en">
+now, if an error occurs during reading a request body,
+the request body is automatically discarded,
+and for complex error processing, such as proxying,
+it is no longer needed to explicitly disable
+passing of the request body to the proxied server.
+</para>
+</change>
+
+<change type="change">
+<para lang="ru">
+уровень логгирования ошибок SSL "SSL alert number N" и "invalid alert"
+понижен с уровня crit до info.
+</para>
+<para lang="en">
+the logging level of the "SSL alert number N" and "invalid alert" SSL errors
+has been lowered from "crit" to "info".
+</para>
+</change>
+
+<change type="change">
+<para lang="ru">
+теперь freenginx всегда возвращает ошибку,
+если за именем заголовка не следует двоеточие.<br/>
+Спасибо Максиму Евменкину.
+</para>
+<para lang="en">
+now freenginx always returns an error
+if a header name is not followed by a colon.<br/>
+Thanks to Maksim Yevmenkin.
+</para>
+</change>
+
+<change type="feature">
+<para lang="ru">
+параметр off в директиве pid.
+</para>
+<para lang="en">
+the "off" parameter of the "pid" directive.
+</para>
+</change>
+
+<change type="feature">
+<para lang="ru">
+теперь при переконфигурации не делается попытка пересоздать PID-файл,
+если имя в директиве pid изменилось,
+но указывает на тот же файл через симлинки.
+</para>
+<para lang="en">
+now during reconfiguration no attempt to recreate the PID file is made
+if the name in the "pid" directive was changed,
+but points to the same file via symlinks.
+</para>
+</change>
+
+<change type="workaround">
+<para lang="ru">
+при запуске под systemd могли возникать ошибки
+"PID file ... not readable (yet?) after start" и
+"Failed to parse PID from file...".
+</para>
+<para lang="en">
+"PID file ... not readable (yet?) after start" and
+"Failed to parse PID from file..." errors
+might appear when starting with systemd.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+если во время чтения тела запроса происходил таймаут,
+об этом не сообщалось в лог ошибок.
+</para>
+<para lang="en">
+no error was written to the error log
+when a timeout occurred during reading a request body.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+перенаправление ошибок 413 с помощью дерективы error_page
+работало некорректно при использовании HTTP/2 и HTTP/3.
+</para>
+<para lang="en">
+redirecting errors with code 413 with the "error_page" directive
+worked incorrectly when using HTTP/2 and HTTP/3.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+freenginx не собирался на NetBSD 10.0.
+</para>
+<para lang="en">
+freenginx could not be built on NetBSD 10.0.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в HTTP/3.
+</para>
+<para lang="en">
+in HTTP/3.
+</para>
+</change>
+
+</changes>
+
+
 <changes ver="1.25.5" date="2024-04-02">
 
 <change type="change">
