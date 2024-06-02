@@ -401,6 +401,8 @@ ngx_http_v3_reset_stream(ngx_connection_t *c)
     ngx_http_v3_session_t   *h3c;
     ngx_http_v3_srv_conf_t  *h3scf;
 
+    ngx_reusable_connection(c, 0);
+
     h3scf = ngx_http_v3_get_module_srv_conf(c, ngx_http_v3_module);
 
     h3c = ngx_http_v3_get_session(c);
