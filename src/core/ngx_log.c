@@ -169,7 +169,7 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
             goto next;
         }
 
-        if (ngx_time() == log->disk_full_time) {
+        if (ngx_time() == log->file->disk_full_time) {
 
             /*
              * on FreeBSD writing to a full filesystem with enabled softupdates
@@ -183,7 +183,7 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
         n = ngx_write_fd(log->file->fd, errstr, p - errstr);
 
         if (n == -1 && ngx_errno == NGX_ENOSPC) {
-            log->disk_full_time = ngx_time();
+            log->file->disk_full_time = ngx_time();
         }
 
         if (log->file->fd == ngx_stderr) {
