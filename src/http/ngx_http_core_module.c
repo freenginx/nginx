@@ -977,6 +977,7 @@ ngx_http_core_find_config_phase(ngx_http_request_t *r,
 
     r->content_handler = NULL;
     r->uri_changed = 0;
+    r->alias_in_uri = 0;
 
     rc = ngx_http_core_find_location(r);
 
@@ -1905,6 +1906,10 @@ ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *path,
 
     alias = clcf->alias;
 
+    if (alias == NGX_MAX_SIZE_T_VALUE) {
+        alias = r->alias_in_uri ? r->alias_in_uri : r->uri.len;
+    }
+
     if (alias && !r->valid_location) {
         ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
                       "\"alias\" cannot be used in location \"%V\" "
@@ -1912,7 +1917,7 @@ ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *path,
         return NULL;
     }
 
-    if (alias > r->uri.len && alias != NGX_MAX_SIZE_T_VALUE) {
+    if (alias > r->uri.len) {
         ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
                       "URI shorter than aliased URI part");
         return NULL;
@@ -1933,12 +1938,7 @@ ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *path,
 
     } else {
 
-        if (alias == NGX_MAX_SIZE_T_VALUE) {
-            reserved += r->add_uri_to_alias ? r->uri.len + 1 : 1;
-
-        } else {
-            reserved += r->uri.len - alias + 1;
-        }
+        reserved += r->uri.len - alias + 1;
 
         if (ngx_http_script_run(r, path, clcf->root_lengths->elts, reserved,
                                 clcf->root_values->elts)
@@ -1955,15 +1955,6 @@ ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *path,
 
         *root_length = path->len - reserved;
         last = path->data + *root_length;
-
-        if (alias == NGX_MAX_SIZE_T_VALUE) {
-            if (!r->add_uri_to_alias) {
-                *last = '\0';
-                return last;
-            }
-
-            alias = 0;
-        }
     }
 
     last = ngx_copy(last, r->uri.data + alias, r->uri.len - alias);
@@ -2566,7 +2557,7 @@ ngx_http_internal_redirect(ngx_http_request_t *r,
 
     r->internal = 1;
     r->valid_unparsed_uri = 0;
-    r->add_uri_to_alias = 0;
+    r->alias_in_uri = 0;
     r->main->count++;
 
     ngx_http_handler(r);
@@ -2626,6 +2617,7 @@ ngx_http_named_location(ngx_http_request_t *r, ngx_str_t *name)
             r->internal = 1;
             r->content_handler = NULL;
             r->uri_changed = 0;
+            r->alias_in_uri = 0;
             r->loc_conf = (*clcfp)->loc_conf;
 
             /* clear the modules contexts */

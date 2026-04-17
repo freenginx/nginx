@@ -446,6 +446,8 @@ struct ngx_http_request_s {
     u_char                           *captures_data;
 #endif
 
+    size_t                            alias_in_uri;
+
     size_t                            limit_rate;
     size_t                            limit_rate_after;
 
@@ -492,7 +494,6 @@ struct ngx_http_request_s {
 
     unsigned                          invalid_header:1;
 
-    unsigned                          add_uri_to_alias:1;
     unsigned                          valid_location:1;
     unsigned                          valid_unparsed_uri:1;
     unsigned                          uri_changed:1;

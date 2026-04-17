@@ -111,6 +111,11 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
 
     alias = clcf->alias;
 
+    if (alias == NGX_MAX_SIZE_T_VALUE) {
+        alias = r->uri.len;
+        r->alias_in_uri = alias;
+    }
+
     for ( ;; ) {
 
         if (tf->lengths) {
@@ -133,9 +138,6 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
 
         if (!alias) {
             reserve = len > r->uri.len ? len - r->uri.len : 0;
-
-        } else if (alias == NGX_MAX_SIZE_T_VALUE) {
-            reserve = len;
 
         } else {
             reserve = len > r->uri.len - alias ? len - (r->uri.len - alias) : 0;
@@ -202,15 +204,7 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
             return NGX_DONE;
         }
 
-        if (alias == NGX_MAX_SIZE_T_VALUE
-            && ngx_filename_cmp(name, r->uri.data, r->uri.len) == 0)
-        {
-            ngx_memmove(name, name + r->uri.len, len - r->uri.len);
-            path.len -= r->uri.len;
-
-        } else if (alias
-                   && ngx_filename_cmp(name, r->uri.data, alias) == 0)
-        {
+        if (alias && ngx_filename_cmp(name, r->uri.data, alias) == 0) {
             ngx_memmove(name, name + alias, len - alias);
             path.len -= alias;
         }
@@ -260,12 +254,6 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
 
         if (!alias) {
             r->uri = path;
-
-        } else if (alias == NGX_MAX_SIZE_T_VALUE) {
-            if (!test_dir) {
-                r->uri = path;
-                r->add_uri_to_alias = 1;
-            }
 
         } else {
             name = r->uri.data;
