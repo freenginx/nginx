@@ -113,7 +113,6 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
 
     if (alias == NGX_MAX_SIZE_T_VALUE) {
         alias = r->uri.len;
-        r->alias_in_uri = alias;
     }
 
     for ( ;; ) {
@@ -267,6 +266,24 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
 
             p = ngx_copy(r->uri.data, name, alias);
             ngx_memcpy(p, path.data, path.len);
+
+            r->alias_in_uri = alias;
+        }
+
+        if (r->valid_location) {
+
+            /*
+             * clear r->valid_location if the new URI
+             * does not match location prefix
+             */
+
+            if (r->uri.len < clcf->name.len
+                || ngx_filename_cmp(r->uri.data, clcf->name.data,
+                                    clcf->name.len)
+                   != 0)
+            {
+                r->valid_location = 0;
+            }
         }
 
         ngx_http_set_exten(r);

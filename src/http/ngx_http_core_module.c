@@ -1910,7 +1910,7 @@ ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *path,
         alias = r->alias_in_uri ? r->alias_in_uri : r->uri.len;
     }
 
-    if (alias && !r->valid_location) {
+    if (alias && !r->valid_location && !r->alias_in_uri) {
         ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
                       "\"alias\" cannot be used in location \"%V\" "
                       "where URI was rewritten", &clcf->name);
