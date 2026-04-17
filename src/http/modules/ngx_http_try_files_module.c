@@ -174,22 +174,11 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
             path.len = e.pos - path.data;
 
             *e.pos = '\0';
-
-            if (alias && alias != NGX_MAX_SIZE_T_VALUE
-                && ngx_filename_cmp(name, r->uri.data, alias) == 0)
-            {
-                ngx_memmove(name, name + alias, len - alias);
-                path.len -= alias;
-            }
         }
 
         test_dir = tf->test_dir;
 
         tf++;
-
-        ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "trying to use %s: \"%s\" \"%s\"",
-                       test_dir ? "dir" : "file", name, path.data);
 
         if (tf->lengths == NULL && tf->name.len == 0) {
 
@@ -212,6 +201,17 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
             ngx_http_finalize_request(r, NGX_DONE);
             return NGX_DONE;
         }
+
+        if (alias && alias != NGX_MAX_SIZE_T_VALUE
+            && ngx_filename_cmp(name, r->uri.data, alias) == 0)
+        {
+            ngx_memmove(name, name + alias, len - alias);
+            path.len -= alias;
+        }
+
+        ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "trying to use %s: \"%s\" \"%s\"",
+                       test_dir ? "dir" : "file", name, path.data);
 
         ngx_memzero(&of, sizeof(ngx_open_file_info_t));
 
