@@ -176,7 +176,7 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
             *e.pos = '\0';
 
             if (alias && alias != NGX_MAX_SIZE_T_VALUE
-                && ngx_strncmp(name, r->uri.data, alias) == 0)
+                && ngx_filename_cmp(name, r->uri.data, alias) == 0)
             {
                 ngx_memmove(name, name + alias, len - alias);
                 path.len -= alias;
