@@ -251,12 +251,13 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
         path.len -= root;
         path.data += root;
 
+        name = r->uri.data;
+        len = r->uri.len;
+
         if (!alias) {
             r->uri = path;
 
         } else {
-            name = r->uri.data;
-
             r->uri.len = alias + path.len;
             r->uri.data = ngx_pnalloc(r->pool, r->uri.len);
             if (r->uri.data == NULL) {
@@ -283,6 +284,18 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
                    != 0)
             {
                 r->valid_location = 0;
+                r->valid_unparsed_uri = 0;
+            }
+        }
+
+        if (r->valid_unparsed_uri) {
+
+            /* clear r->valid_unparsed_uri if URI was changed */
+
+            if (r->uri.len != len
+                || ngx_strncmp(r->uri.data, name, len) != 0)
+            {
+                r->valid_unparsed_uri = 0;
             }
         }
 
