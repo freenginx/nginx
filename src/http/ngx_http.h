@@ -72,6 +72,7 @@ struct ngx_http_chunked_s {
 typedef struct {
     ngx_uint_t           http_version;
     ngx_uint_t           code;
+    u_char              *line_start;
     u_char              *start;
     u_char              *end;
 } ngx_http_status_t;

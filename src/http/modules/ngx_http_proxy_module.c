@@ -1862,6 +1862,8 @@ ngx_http_proxy_process_status_line(ngx_http_request_t *r)
         u->headers_in.status_n = 200;
         u->headers_in.connection_close = 1;
 
+        u->buffer.pos = ctx->status.line_start;
+
         return NGX_OK;
     }
 
