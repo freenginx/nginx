@@ -120,6 +120,10 @@ ngx_http_index_handler(ngx_http_request_t *r)
     ilcf = ngx_http_get_module_loc_conf(r, ngx_http_index_module);
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
+    if (ilcf->indices == NULL) {
+        return NGX_DECLINED;
+    }
+
     allocated = 0;
     root = 0;
     dir_tested = 0;
@@ -394,7 +398,7 @@ ngx_http_index_create_loc_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    conf->indices = NULL;
+    conf->indices = NGX_CONF_UNSET_PTR;
     conf->max_index_len = 0;
 
     return conf;
@@ -409,12 +413,12 @@ ngx_http_index_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_http_index_t  *index;
 
-    if (conf->indices == NULL) {
+    if (conf->indices == NGX_CONF_UNSET_PTR) {
         conf->indices = prev->indices;
         conf->max_index_len = prev->max_index_len;
     }
 
-    if (conf->indices == NULL) {
+    if (conf->indices == NGX_CONF_UNSET_PTR) {
         conf->indices = ngx_array_create(cf->pool, 1, sizeof(ngx_http_index_t));
         if (conf->indices == NULL) {
             return NGX_CONF_ERROR;
@@ -470,14 +474,29 @@ ngx_http_index_set_index(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_http_index_t           *index;
     ngx_http_script_compile_t   sc;
 
+    value = cf->args->elts;
+
+    if (cf->args->nelts == 2
+        && ngx_strcmp(value[1].data, "off") == 0)
+    {
+        if (ilcf->indices != NGX_CONF_UNSET_PTR) {
+            return "is duplicate";
+        }
+
+        ilcf->indices = NULL;
+        return NGX_CONF_OK;
+    }
+
     if (ilcf->indices == NULL) {
+        return "is duplicate";
+    }
+
+    if (ilcf->indices == NGX_CONF_UNSET_PTR) {
         ilcf->indices = ngx_array_create(cf->pool, 2, sizeof(ngx_http_index_t));
         if (ilcf->indices == NULL) {
             return NGX_CONF_ERROR;
         }
     }
-
-    value = cf->args->elts;
 
     for (i = 1; i < cf->args->nelts; i++) {
 
