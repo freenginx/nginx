@@ -129,7 +129,7 @@ ngx_os_specific_init(ngx_log_t *log)
         ngx_log_error(NGX_LOG_ALERT, log, err,
                       "sysctlbyname(kern.osrelease) failed");
 
-        if (ngx_errno != NGX_ENOMEM) {
+        if (err != NGX_ENOMEM) {
             return NGX_ERROR;
         }
 
