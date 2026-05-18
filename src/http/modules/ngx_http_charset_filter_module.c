@@ -630,7 +630,7 @@ ngx_http_charset_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                 b->shadow->pos = b->shadow->last;
             }
 
-            if (b->pos) {
+            if (b->start) {
                 cl->next = ctx->free_buffers;
                 ctx->free_buffers = cl;
                 continue;
@@ -821,7 +821,7 @@ ngx_http_charset_recode_from_utf8(ngx_pool_t *pool, ngx_buf_t *buf,
 
             b = out->buf;
 
-            b->pos = buf->pos;
+            b->pos = buf->last;
             b->last = buf->last;
             b->sync = 1;
             b->shadow = buf;
@@ -1094,15 +1094,23 @@ recode:
 static ngx_chain_t *
 ngx_http_charset_get_buf(ngx_pool_t *pool, ngx_http_charset_ctx_t *ctx)
 {
+    ngx_buf_t    *b;
     ngx_chain_t  *cl;
 
     cl = ctx->free_bufs;
 
     if (cl) {
         ctx->free_bufs = cl->next;
-
-        cl->buf->shadow = NULL;
         cl->next = NULL;
+
+        b = cl->buf;
+
+        b->temporary = 0;
+        b->memory = 0;
+        b->mmap = 0;
+        b->flush = 0;
+        b->sync = 0;
+        b->shadow = NULL;
 
         return cl;
     }
@@ -1144,6 +1152,7 @@ ngx_http_charset_get_buffer(ngx_pool_t *pool, ngx_http_charset_ctx_t *ctx,
 
             b->pos = b->start;
             b->temporary = 1;
+            b->sync = 0;
             b->shadow = NULL;
 
             return cl;
