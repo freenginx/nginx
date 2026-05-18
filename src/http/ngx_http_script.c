@@ -1203,7 +1203,7 @@ ngx_http_script_regex_end_code(ngx_http_script_engine_t *e)
 
     r = e->request;
 
-    e->quote = 0;
+    e->quote = 1;
     e->is_args = 0;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
