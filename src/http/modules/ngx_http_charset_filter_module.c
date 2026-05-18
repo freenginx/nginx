@@ -1345,11 +1345,17 @@ ngx_http_charset_map(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
     if (ctx->charset->utf8) {
         p = &table->src2dst[src * NGX_UTF_LEN];
 
+        if (value[1].len / 2 > NGX_UTF_LEN - 1) {
+            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                               "invalid value \"%V\"", &value[1]);
+            return NGX_CONF_ERROR;
+        }
+
         *p++ = (u_char) (value[1].len / 2);
 
         for (i = 0; i < value[1].len; i += 2) {
             dst = ngx_hextoi(&value[1].data[i], 2);
-            if (dst == NGX_ERROR || dst > 255) {
+            if (dst == NGX_ERROR) {
                 ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                    "invalid value \"%V\"", &value[1]);
                 return NGX_CONF_ERROR;
