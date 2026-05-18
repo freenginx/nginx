@@ -1161,6 +1161,7 @@ ngx_http_script_regex_start_code(ngx_http_script_engine_t *e)
         le.line = e->line;
         le.request = r;
         le.quote = code->redirect;
+        le.is_args = e->is_args;
 
         len = 0;
 
@@ -1203,6 +1204,7 @@ ngx_http_script_regex_end_code(ngx_http_script_engine_t *e)
     r = e->request;
 
     e->quote = 0;
+    e->is_args = 0;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http script regex end");
@@ -1769,6 +1771,7 @@ ngx_http_script_complex_value_code(ngx_http_script_engine_t *e)
     le.line = e->line;
     le.request = e->request;
     le.quote = e->quote;
+    le.is_args = e->is_args;
 
     for (len = 0; *(uintptr_t *) le.ip; len += lcode(&le)) {
         lcode = *(ngx_http_script_len_code_pt *) le.ip;
