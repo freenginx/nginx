@@ -788,8 +788,8 @@ ngx_http_charset_recode_from_utf8(ngx_pool_t *pool, ngx_buf_t *buf,
 
     p = src;
 
-    for (i = ctx->saved_len; i < NGX_UTF_LEN; i++) {
-        ctx->saved[i] = *p++;
+    for (i = ctx->saved_len; i < NGX_UTF_LEN; /* void */) {
+        ctx->saved[i++] = *p++;
 
         if (p == buf->last) {
             break;
@@ -826,8 +826,7 @@ ngx_http_charset_recode_from_utf8(ngx_pool_t *pool, ngx_buf_t *buf,
             b->sync = 1;
             b->shadow = buf;
 
-            ngx_memcpy(&ctx->saved[ctx->saved_len], src, i);
-            ctx->saved_len += i;
+            ctx->saved_len = i;
 
             return out;
         }
