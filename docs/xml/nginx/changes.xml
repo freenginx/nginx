@@ -7,6 +7,106 @@
 <section title="freenginx">
 
 
+<changes ver="1.31.1" date="2026-05-19">
+
+<change type="feature">
+<para lang="ru">
+параметр off в директиве index.<br/>
+Спасибо Fabiano Furtado.
+</para>
+<para lang="en">
+the "off" parameter of the "index" directive.<br/>
+Thanks to Fabiano Furtado.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если директива rewrite использовалась для изменения аргументов запроса
+и после неё выполнялись другие директивы модуля ngx_http_rewrite_module.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the "rewrite" directive was used to change request arguments
+and other directives of the ngx_http_rewrite_module were executed afterwards.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в директиве set.
+</para>
+<para lang="en">
+in the "set" directive.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если модуль ngx_http_charset_module использовался
+для перекодирования ответов из UTF-8.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the ngx_http_charset_module was used
+to convert responses from UTF-8.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в модуле ngx_http_charset_module.
+</para>
+<para lang="en">
+in the ngx_http_charset_module.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если использовалась директива ssl_ocsp.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the "ssl_ocsp" directive was used.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если использовались директивы scgi_pass или uwsgi_pass.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the "scgi_pass" or "uwsgi_pass" directives were used.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в директиве scgi_request_buffering.
+</para>
+<para lang="en">
+in the "scgi_request_buffering" directive.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в HTTP/3.
+</para>
+<para lang="en">
+in HTTP/3.
+</para>
+</change>
+
+</changes>
+
+
 <changes ver="1.31.0" date="2026-05-05">
 
 <change type="change">
