@@ -483,12 +483,6 @@ ngx_http_script_compile(ngx_http_script_compile_t *sc)
 
                 n = sc->source->data[i] - '0';
 
-                if (sc->captures_mask & ((ngx_uint_t) 1 << n)) {
-                    sc->dup_capture = 1;
-                }
-
-                sc->captures_mask |= (ngx_uint_t) 1 << n;
-
                 if (ngx_http_script_add_capture_code(sc, n) != NGX_OK) {
                     return NGX_ERROR;
                 }
@@ -1039,7 +1033,6 @@ ngx_http_script_regex_start_code(ngx_http_script_engine_t *e)
 {
     size_t                         len;
     ngx_int_t                      rc;
-    ngx_uint_t                     n;
     ngx_http_request_t            *r;
     ngx_http_script_engine_t       le;
     ngx_http_script_len_code_pt    lcode;
@@ -1140,38 +1133,22 @@ ngx_http_script_regex_start_code(ngx_http_script_engine_t *e)
         }
     }
 
-    if (code->lengths == NULL) {
-        e->buf.len = code->size;
+    ngx_memzero(&le, sizeof(ngx_http_script_engine_t));
 
-        if (code->uri) {
-            if (r->ncaptures && (r->quoted_uri || r->plus_in_uri)) {
-                e->buf.len += 2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len,
-                                                 NGX_ESCAPE_ARGS);
-            }
-        }
+    le.ip = code->lengths->elts;
+    le.line = e->line;
+    le.request = r;
+    le.quote = code->redirect;
+    le.is_args = e->is_args;
 
-        for (n = 2; n < r->ncaptures; n += 2) {
-            e->buf.len += r->captures[n + 1] - r->captures[n];
-        }
+    len = 0;
 
-    } else {
-        ngx_memzero(&le, sizeof(ngx_http_script_engine_t));
-
-        le.ip = code->lengths->elts;
-        le.line = e->line;
-        le.request = r;
-        le.quote = code->redirect;
-        le.is_args = e->is_args;
-
-        len = 0;
-
-        while (*(uintptr_t *) le.ip) {
-            lcode = *(ngx_http_script_len_code_pt *) le.ip;
-            len += lcode(&le);
-        }
-
-        e->buf.len = len;
+    while (*(uintptr_t *) le.ip) {
+        lcode = *(ngx_http_script_len_code_pt *) le.ip;
+        len += lcode(&le);
     }
+
+    e->buf.len = len;
 
     if (code->add_args && r->args.len) {
         e->buf.len += r->args.len + 1;
