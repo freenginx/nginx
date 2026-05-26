@@ -194,12 +194,10 @@ ngx_stream_compile_complex_value(ngx_stream_compile_complex_value_t *ccv)
         return NGX_ERROR;
     }
 
-    n = (nv * (2 * sizeof(ngx_stream_script_copy_code_t)
-                   + sizeof(ngx_stream_script_var_code_t))
-                + sizeof(uintptr_t)
-                + v->len
-                + sizeof(uintptr_t) - 1)
-            & ~(sizeof(uintptr_t) - 1);
+    n = nv * (2 * sizeof(ngx_stream_script_copy_code_t)
+                  + sizeof(ngx_stream_script_var_code_t))
+        + sizeof(uintptr_t)
+        + ngx_align(v->len, sizeof(uintptr_t));
 
     if (ngx_array_init(&values, ccv->cf->pool, n, 1) != NGX_OK) {
         return NGX_ERROR;
@@ -577,12 +575,10 @@ ngx_stream_script_init_arrays(ngx_stream_script_compile_t *sc)
     }
 
     if (*sc->values == NULL) {
-        n = (sc->variables * (2 * sizeof(ngx_stream_script_copy_code_t)
-                              + sizeof(ngx_stream_script_var_code_t))
-                + sizeof(uintptr_t)
-                + sc->source->len
-                + sizeof(uintptr_t) - 1)
-            & ~(sizeof(uintptr_t) - 1);
+        n = sc->variables * (2 * sizeof(ngx_stream_script_copy_code_t)
+                             + sizeof(ngx_stream_script_var_code_t))
+            + sizeof(uintptr_t)
+            + ngx_align(sc->source->len, sizeof(uintptr_t));
 
         *sc->values = ngx_array_create(sc->cf->pool, n, 1);
         if (*sc->values == NULL) {
@@ -688,8 +684,8 @@ ngx_stream_script_add_copy_code(ngx_stream_script_compile_t *sc,
                                                ngx_stream_script_copy_len_code;
     code->len = len;
 
-    size = (sizeof(ngx_stream_script_copy_code_t) + len + sizeof(uintptr_t) - 1)
-            & ~(sizeof(uintptr_t) - 1);
+    size = sizeof(ngx_stream_script_copy_code_t)
+           + ngx_align(len, sizeof(uintptr_t));
 
     code = ngx_stream_script_add_code(*sc->values, size, &sc->main);
     if (code == NULL) {
@@ -740,7 +736,7 @@ ngx_stream_script_copy_code(ngx_stream_script_engine_t *e)
     }
 
     e->ip += sizeof(ngx_stream_script_copy_code_t)
-          + ((code->len + sizeof(uintptr_t) - 1) & ~(sizeof(uintptr_t) - 1));
+          + ngx_align(code->len, sizeof(uintptr_t));
 
     ngx_log_debug2(NGX_LOG_DEBUG_STREAM, e->session->connection->log, 0,
                    "stream script copy: \"%*s\"", e->pos - p, p);

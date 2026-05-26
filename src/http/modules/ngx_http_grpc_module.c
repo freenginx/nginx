@@ -4717,9 +4717,8 @@ ngx_http_grpc_init_headers(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
                                                  ngx_http_script_copy_len_code;
         copy->len = src[i].key.len;
 
-        size = (sizeof(ngx_http_script_copy_code_t)
-                + src[i].key.len + sizeof(uintptr_t) - 1)
-               & ~(sizeof(uintptr_t) - 1);
+        size = sizeof(ngx_http_script_copy_code_t)
+               + ngx_align(src[i].key.len, sizeof(uintptr_t));
 
         copy = ngx_array_push_n(headers->values, size);
         if (copy == NULL) {

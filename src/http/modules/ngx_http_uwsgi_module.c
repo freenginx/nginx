@@ -2141,9 +2141,8 @@ ngx_http_uwsgi_init_params(ngx_conf_t *cf, ngx_http_uwsgi_loc_conf_t *conf,
         copy->len = src[i].skip_empty;
 
 
-        size = (sizeof(ngx_http_script_copy_code_t)
-                + src[i].key.len + sizeof(uintptr_t) - 1)
-               & ~(sizeof(uintptr_t) - 1);
+        size = sizeof(ngx_http_script_copy_code_t)
+               + ngx_align(src[i].key.len, sizeof(uintptr_t));
 
         copy = ngx_array_push_n(params->values, size);
         if (copy == NULL) {
