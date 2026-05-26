@@ -23,7 +23,6 @@ static ngx_int_t ngx_http_script_add_capture_code(ngx_http_script_compile_t *sc,
 #endif
 static ngx_int_t
     ngx_http_script_add_full_name_code(ngx_http_script_compile_t *sc);
-static size_t ngx_http_script_full_name_len_code(ngx_http_script_engine_t *e);
 static void ngx_http_script_full_name_code(ngx_http_script_engine_t *e);
 
 
@@ -1395,17 +1394,6 @@ ngx_http_script_add_full_name_code(ngx_http_script_compile_t *sc)
 {
     ngx_http_script_full_name_code_t  *code;
 
-    code = ngx_http_script_add_code(*sc->lengths,
-                                    sizeof(ngx_http_script_full_name_code_t),
-                                    NULL);
-    if (code == NULL) {
-        return NGX_ERROR;
-    }
-
-    code->code = (ngx_http_script_code_pt) (uintptr_t)
-                                            ngx_http_script_full_name_len_code;
-    code->conf_prefix = sc->conf_prefix;
-
     code = ngx_http_script_add_code(*sc->values,
                                     sizeof(ngx_http_script_full_name_code_t),
                                     &sc->main);
@@ -1417,20 +1405,6 @@ ngx_http_script_add_full_name_code(ngx_http_script_compile_t *sc)
     code->conf_prefix = sc->conf_prefix;
 
     return NGX_OK;
-}
-
-
-static size_t
-ngx_http_script_full_name_len_code(ngx_http_script_engine_t *e)
-{
-    ngx_http_script_full_name_code_t  *code;
-
-    code = (ngx_http_script_full_name_code_t *) e->ip;
-
-    e->ip += sizeof(ngx_http_script_full_name_code_t);
-
-    return code->conf_prefix ? ngx_cycle->conf_prefix.len:
-                               ngx_cycle->prefix.len;
 }
 
 
