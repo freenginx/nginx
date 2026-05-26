@@ -7,6 +7,31 @@
 <section title="freenginx">
 
 
+<changes ver="1.31.2" date="2026-05-26">
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если в директиве rewrite использовались вложенные выделения.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if nested captures were used in the "rewrite" directive.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+директива if при проверке файлов некорректно обрабатывала относительные пути.
+</para>
+<para lang="en">
+the "if" directive incorrectly handled relative paths when checking files.
+</para>
+</change>
+
+</changes>
+
+
 <changes ver="1.31.1" date="2026-05-19">
 
 <change type="feature">
