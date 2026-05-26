@@ -834,6 +834,12 @@ ngx_stream_upstream_save_round_robin_peer_session(ngx_peer_connection_t *pc,
             peer->ssl_session_len = len;
         }
 
+        if (peer->ssl_session == NULL || len > peer->ssl_session_len) {
+            ngx_stream_upstream_rr_peer_unlock(peers, peer);
+            ngx_stream_upstream_rr_peers_unlock(peers);
+            return;
+        }
+
         ngx_memcpy(peer->ssl_session, buf, len);
 
         ngx_stream_upstream_rr_peer_unlock(peers, peer);
