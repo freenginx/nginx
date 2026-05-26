@@ -1606,6 +1606,14 @@ ngx_http_script_file_code(ngx_http_script_engine_t *e)
 
     r = e->request;
 
+    if (ngx_get_full_name(r->pool, (ngx_str_t *) &ngx_cycle->prefix, &path)
+        != NGX_OK)
+    {
+        e->ip = ngx_http_script_exit;
+        e->status = NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return;
+    }
+
     ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http script file op %p \"%V\"", (void *) code->op, &path);
 
