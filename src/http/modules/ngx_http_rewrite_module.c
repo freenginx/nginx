@@ -405,10 +405,6 @@ ngx_http_rewrite(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     regex->size = sc.size;
     regex->args = sc.args;
 
-    if (sc.variables == 0 && !sc.dup_capture) {
-        regex->lengths = NULL;
-    }
-
     regex_end = ngx_http_script_add_code(lcf->codes,
                                       sizeof(ngx_http_script_regex_end_code_t),
                                       &regex);
