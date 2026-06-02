@@ -7,6 +7,96 @@
 <section title="freenginx">
 
 
+<changes ver="1.30.1" date="2026-06-02">
+
+<change type="change">
+<para lang="ru">
+уровень логгирования ошибок SSL
+"invalid ccs message", "not on record boundary",
+"required compression algorithm missing"
+и некоторых ошибок "record layer failure"
+понижен с уровня crit до info.
+</para>
+<para lang="en">
+the logging level of the
+"invalid ccs message", "not on record boundary",
+"required compression algorithm missing",
+and some "record layer failure" SSL errors
+has been lowered from "crit" to "info".
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если директива rewrite использовалась для изменения аргументов запроса
+и после неё выполнялись другие директивы модуля ngx_http_rewrite_module.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the "rewrite" directive was used to change request arguments
+and other directives of the ngx_http_rewrite_module were executed afterwards.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если в директиве rewrite использовались вложенные выделения.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if nested captures were used in the "rewrite" directive.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если модуль ngx_http_charset_module использовался
+для перекодирования ответов из UTF-8.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the ngx_http_charset_module was used
+to convert responses from UTF-8.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если использовалась директива ssl_ocsp.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the "ssl_ocsp" directive was used.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если использовались директивы scgi_pass или uwsgi_pass.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the "scgi_pass" or "uwsgi_pass" directives were used.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в HTTP/3.
+</para>
+<para lang="en">
+in HTTP/3.
+</para>
+</change>
+
+</changes>
+
+
 <changes ver="1.30.0" date="2026-04-14">
 
 <change>
