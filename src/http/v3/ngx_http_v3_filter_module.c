@@ -592,6 +592,7 @@ static ngx_int_t
 ngx_http_v3_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
     u_char                    *chunk;
+    size_t                     len;
     off_t                      size;
     ngx_int_t                  rc;
     ngx_buf_t                 *b;
@@ -645,6 +646,9 @@ ngx_http_v3_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     }
 
     if (size) {
+        len = ngx_http_v3_encode_varlen_int(NULL, NGX_HTTP_V3_FRAME_DATA)
+              + ngx_http_v3_encode_varlen_int(NULL, size);
+
         tl = ngx_chain_get_free_buf(r->pool, &ctx->free);
         if (tl == NULL) {
             return NGX_ERROR;
@@ -653,14 +657,14 @@ ngx_http_v3_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         b = tl->buf;
         chunk = b->start;
 
-        if (chunk == NULL) {
-            chunk = ngx_palloc(r->pool, NGX_HTTP_V3_VARLEN_INT_LEN * 2);
+        if (chunk == NULL || (size_t) (b->end - chunk) < len) {
+            chunk = ngx_palloc(r->pool, len);
             if (chunk == NULL) {
                 return NGX_ERROR;
             }
 
             b->start = chunk;
-            b->end = chunk + NGX_HTTP_V3_VARLEN_INT_LEN * 2;
+            b->end = chunk + len;
         }
 
         b->tag = (ngx_buf_tag_t) &ngx_http_v3_filter_module;
@@ -806,6 +810,9 @@ ngx_http_v3_create_trailers(ngx_http_request_t *r,
 
     h3c->payload_bytes += n;
 
+    len = ngx_http_v3_encode_varlen_int(NULL, NGX_HTTP_V3_FRAME_HEADERS)
+          + ngx_http_v3_encode_varlen_int(NULL, n);
+
     hl = ngx_chain_get_free_buf(r->pool, &ctx->free);
     if (hl == NULL) {
         return NULL;
@@ -814,14 +821,14 @@ ngx_http_v3_create_trailers(ngx_http_request_t *r,
     b = hl->buf;
     p = b->start;
 
-    if (p == NULL) {
-        p = ngx_palloc(r->pool, NGX_HTTP_V3_VARLEN_INT_LEN * 2);
+    if (p == NULL || (size_t) (b->end - p) < len) {
+        p = ngx_palloc(r->pool, len);
         if (p == NULL) {
             return NULL;
         }
 
         b->start = p;
-        b->end = p + NGX_HTTP_V3_VARLEN_INT_LEN * 2;
+        b->end = p + len;
     }
 
     b->tag = (ngx_buf_tag_t) &ngx_http_v3_filter_module;
