@@ -46,6 +46,8 @@ static ngx_int_t ngx_http_perl_call_handler(pTHX_ ngx_http_request_t *r,
     ngx_http_perl_ctx_t *ctx, HV *nginx, SV *sub, SV **args,
     ngx_str_t *handler, ngx_str_t *rv);
 static void ngx_http_perl_eval_anon_sub(pTHX_ ngx_str_t *handler, SV **sv);
+static ngx_http_perl_ctx_t *ngx_http_perl_create_ctx(ngx_http_request_t *r);
+static void ngx_http_perl_cleanup_ctx(void *data);
 
 static ngx_int_t ngx_http_perl_preconfiguration(ngx_conf_t *cf);
 static void *ngx_http_perl_create_main_conf(ngx_conf_t *cf);
@@ -184,7 +186,7 @@ ngx_http_perl_handle_request(ngx_http_request_t *r)
     SV                         *sub;
     ngx_int_t                   rc;
     ngx_str_t                   uri, args, *handler;
-    ngx_uint_t                  flags;
+    ngx_uint_t                  flags, async;
     ngx_http_perl_ctx_t        *ctx;
     ngx_http_perl_loc_conf_t   *plcf;
     ngx_http_perl_main_conf_t  *pmcf;
@@ -194,15 +196,11 @@ ngx_http_perl_handle_request(ngx_http_request_t *r)
     ctx = ngx_http_get_module_ctx(r, ngx_http_perl_module);
 
     if (ctx == NULL) {
-        ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_perl_ctx_t));
+        ctx = ngx_http_perl_create_ctx(r);
         if (ctx == NULL) {
             ngx_http_finalize_request(r, NGX_ERROR);
             return;
         }
-
-        ngx_http_set_ctx(r, ctx, ngx_http_perl_module);
-
-        ctx->request = r;
     }
 
     pmcf = ngx_http_get_module_main_conf(r, ngx_http_perl_module);
@@ -217,15 +215,21 @@ ngx_http_perl_handle_request(ngx_http_request_t *r)
         plcf = ngx_http_get_module_loc_conf(r, ngx_http_perl_module);
         sub = plcf->sub;
         handler = &plcf->handler;
+        async = 0;
 
     } else {
         sub = ctx->next;
         handler = &ngx_null_name;
         ctx->next = NULL;
+        async = 1;
     }
 
     rc = ngx_http_perl_call_handler(aTHX_ r, ctx, pmcf->nginx, sub, NULL,
                                     handler, NULL);
+
+    if (async) {
+        SvREFCNT_dec(sub);
+    }
 
     }
 
@@ -326,14 +330,10 @@ ngx_http_perl_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
     ctx = ngx_http_get_module_ctx(r, ngx_http_perl_module);
 
     if (ctx == NULL) {
-        ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_perl_ctx_t));
+        ctx = ngx_http_perl_create_ctx(r);
         if (ctx == NULL) {
             return NGX_ERROR;
         }
-
-        ngx_http_set_ctx(r, ctx, ngx_http_perl_module);
-
-        ctx->request = r;
     }
 
     saved = ctx->variable;
@@ -395,14 +395,10 @@ ngx_http_perl_ssi(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ssi_ctx,
     ctx = ngx_http_get_module_ctx(r, ngx_http_perl_module);
 
     if (ctx == NULL) {
-        ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_perl_ctx_t));
+        ctx = ngx_http_perl_create_ctx(r);
         if (ctx == NULL) {
             return NGX_ERROR;
         }
-
-        ngx_http_set_ctx(r, ctx, ngx_http_perl_module);
-
-        ctx->request = r;
     }
 
     pmcf = ngx_http_get_module_main_conf(r, ngx_http_perl_module);
@@ -839,6 +835,61 @@ ngx_http_perl_eval_anon_sub(pTHX_ ngx_str_t *handler, SV **sv)
     }
 
     *sv = NULL;
+}
+
+
+static ngx_http_perl_ctx_t *
+ngx_http_perl_create_ctx(ngx_http_request_t *r)
+{
+    ngx_pool_cleanup_t    *cln;
+    ngx_http_perl_ctx_t  *ctx;
+
+    ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_perl_ctx_t));
+    if (ctx == NULL) {
+        return NULL;
+    }
+
+    cln = ngx_pool_cleanup_add(r->pool, 0);
+    if (cln == NULL) {
+        return NULL;
+    }
+
+    cln->handler = ngx_http_perl_cleanup_ctx;
+    cln->data = ctx;
+
+    ngx_http_set_ctx(r, ctx, ngx_http_perl_module);
+
+    ctx->request = r;
+
+    return ctx;
+}
+
+
+static void
+ngx_http_perl_cleanup_ctx(void *data)
+{
+    ngx_http_perl_ctx_t        *ctx = data;
+    SV                        *next;
+    ngx_http_perl_main_conf_t  *pmcf;
+
+    if (ctx->next == NULL) {
+        return;
+    }
+
+    pmcf = ngx_http_get_module_main_conf(ctx->request, ngx_http_perl_module);
+
+    {
+
+    dTHXa(pmcf->perl);
+    PERL_SET_CONTEXT(pmcf->perl);
+    PERL_SET_INTERP(pmcf->perl);
+
+    next = ctx->next;
+    ctx->next = NULL;
+
+    SvREFCNT_dec(next);
+
+    }
 }
 
 

@@ -396,6 +396,7 @@ has_request_body(r, next)
     ngx_http_request_t   *r;
     ngx_http_perl_ctx_t  *ctx;
     ngx_int_t             rc;
+    SV                   *next;
 
     ngx_http_perl_set_request(r, ctx);
 
@@ -407,11 +408,18 @@ has_request_body(r, next)
         croak("has_request_body(): another handler active");
     }
 
+    next = ST(1);
+
+    if (!SvROK(next) || SvTYPE(SvRV(next)) != SVt_PVCV) {
+        croak("has_request_body(): next is not a CODE reference");
+    }
+
     if (r->headers_in.content_length_n <= 0 && !r->headers_in.chunked) {
         XSRETURN_UNDEF;
     }
 
-    ctx->next = SvRV(ST(1));
+    ctx->next = SvRV(next);
+    SvREFCNT_inc(ctx->next);
 
     r->request_body_in_single_buf = 1;
     r->request_body_in_persistent_file = 1;
@@ -423,9 +431,12 @@ has_request_body(r, next)
 
     rc = ngx_http_read_client_request_body(r, ngx_http_perl_handle_request);
 
-    if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+    if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
         ctx->error = 1;
-        ctx->status = rc;
+        ctx->status = (rc == NGX_ERROR) ? NGX_HTTP_INTERNAL_SERVER_ERROR : rc;
+        if (ctx->next) {
+            SvREFCNT_dec(ctx->next);
+        }
         ctx->next = NULL;
         croak("ngx_http_read_client_request_body() failed");
     }
@@ -1130,6 +1141,7 @@ sleep(r, sleep, next)
     ngx_http_request_t   *r;
     ngx_http_perl_ctx_t  *ctx;
     ngx_msec_t            sleep;
+    SV                   *next;
 
     ngx_http_perl_set_request(r, ctx);
 
@@ -1142,11 +1154,17 @@ sleep(r, sleep, next)
     }
 
     sleep = (ngx_msec_t) SvIV(ST(1));
+    next = ST(2);
+
+    if (!SvROK(next) || SvTYPE(SvRV(next)) != SVt_PVCV) {
+        croak("sleep(): next is not a CODE reference");
+    }
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "perl sleep: %M", sleep);
 
-    ctx->next = SvRV(ST(2));
+    ctx->next = SvRV(next);
+    SvREFCNT_inc(ctx->next);
 
     r->connection->write->delayed = 1;
     ngx_add_timer(r->connection->write, sleep);
