@@ -1374,6 +1374,7 @@ ngx_mail_proxy_upstream_error(ngx_mail_session_t *s)
                        s->proxy->upstream.connection->fd);
 
         ngx_close_connection(s->proxy->upstream.connection);
+        s->proxy->upstream.connection = NULL;
     }
 
     if (s->out.len == 0) {
@@ -1395,6 +1396,7 @@ ngx_mail_proxy_internal_server_error(ngx_mail_session_t *s)
                        s->proxy->upstream.connection->fd);
 
         ngx_close_connection(s->proxy->upstream.connection);
+        s->proxy->upstream.connection = NULL;
     }
 
     ngx_mail_session_internal_server_error(s);
@@ -1410,6 +1412,7 @@ ngx_mail_proxy_close_session(ngx_mail_session_t *s)
                        s->proxy->upstream.connection->fd);
 
         ngx_close_connection(s->proxy->upstream.connection);
+        s->proxy->upstream.connection = NULL;
     }
 
     ngx_mail_close_connection(s->connection);
