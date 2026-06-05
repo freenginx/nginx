@@ -439,6 +439,8 @@ struct ngx_http_request_s {
     ngx_uint_t                        access_code;
 
     ngx_http_variable_value_t        *variables;
+    /* suppress recursive no-cacheable flushes during script evaluation */
+    ngx_uint_t                        script_depth;
 
 #if (NGX_PCRE)
     ngx_uint_t                        ncaptures;
