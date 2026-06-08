@@ -431,7 +431,6 @@ ngx_http_auth_request_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     if (v->get_handler == NULL) {
         v->get_handler = ngx_http_auth_request_variable;
-        v->data = (uintptr_t) av;
     }
 
     av->set_handler = v->set_handler;
