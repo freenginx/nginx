@@ -58,6 +58,7 @@ ngx_http_complex_value(ngx_http_request_t *r, ngx_http_complex_value_t *val,
     ngx_str_t *value)
 {
     size_t                        len;
+    ngx_uint_t                    flushed;
     ngx_http_script_code_pt       code;
     ngx_http_script_len_code_pt   lcode;
     ngx_http_script_engine_t      e;
@@ -67,7 +68,13 @@ ngx_http_complex_value(ngx_http_request_t *r, ngx_http_complex_value_t *val,
         return NGX_OK;
     }
 
-    ngx_http_script_flush_complex_value(r, val);
+    flushed = (r->script_depth == 0);
+
+    if (flushed) {
+        ngx_http_script_flush_complex_value(r, val);
+    }
+
+    r->script_depth++;
 
     ngx_memzero(&e, sizeof(ngx_http_script_engine_t));
 
@@ -85,6 +92,7 @@ ngx_http_complex_value(ngx_http_request_t *r, ngx_http_complex_value_t *val,
     value->len = len;
     value->data = ngx_pnalloc(r->pool, len);
     if (value->data == NULL) {
+        r->script_depth--;
         return NGX_ERROR;
     }
 
@@ -98,6 +106,8 @@ ngx_http_complex_value(ngx_http_request_t *r, ngx_http_complex_value_t *val,
     }
 
     *value = e.buf;
+
+    r->script_depth--;
 
     return NGX_OK;
 }
@@ -607,19 +617,26 @@ ngx_http_script_run(ngx_http_request_t *r, ngx_str_t *value,
     void *code_lengths, size_t len, void *code_values)
 {
     ngx_uint_t                    i;
+    ngx_uint_t                    flushed;
     ngx_http_script_code_pt       code;
     ngx_http_script_len_code_pt   lcode;
     ngx_http_script_engine_t      e;
     ngx_http_core_main_conf_t    *cmcf;
 
-    cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
+    flushed = (r->script_depth == 0);
 
-    for (i = 0; i < cmcf->variables.nelts; i++) {
-        if (r->variables[i].no_cacheable) {
-            r->variables[i].valid = 0;
-            r->variables[i].not_found = 0;
+    if (flushed) {
+        cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
+
+        for (i = 0; i < cmcf->variables.nelts; i++) {
+            if (r->variables[i].no_cacheable) {
+                r->variables[i].valid = 0;
+                r->variables[i].not_found = 0;
+            }
         }
     }
+
+    r->script_depth++;
 
     ngx_memzero(&e, sizeof(ngx_http_script_engine_t));
 
@@ -636,6 +653,7 @@ ngx_http_script_run(ngx_http_request_t *r, ngx_str_t *value,
     value->len = len;
     value->data = ngx_pnalloc(r->pool, len);
     if (value->data == NULL) {
+        r->script_depth--;
         return NULL;
     }
 
@@ -647,6 +665,8 @@ ngx_http_script_run(ngx_http_request_t *r, ngx_str_t *value,
         code((ngx_http_script_engine_t *) &e);
     }
 
+    r->script_depth--;
+
     return e.pos;
 }
 
@@ -656,6 +676,10 @@ ngx_http_script_flush_no_cacheable_variables(ngx_http_request_t *r,
     ngx_array_t *indices)
 {
     ngx_uint_t  n, *index;
+
+    if (r->script_depth) {
+        return;
+    }
 
     if (indices) {
         index = indices->elts;
@@ -922,6 +946,7 @@ ngx_http_script_add_var_code(ngx_http_script_compile_t *sc, ngx_str_t *name)
 size_t
 ngx_http_script_copy_var_len_code(ngx_http_script_engine_t *e)
 {
+    ngx_http_request_t          *r;
     ngx_http_variable_value_t   *value;
     ngx_http_script_var_code_t  *code;
 
@@ -929,12 +954,17 @@ ngx_http_script_copy_var_len_code(ngx_http_script_engine_t *e)
 
     e->ip += sizeof(ngx_http_script_var_code_t);
 
+    r = e->request;
+    r->script_depth++;
+
     if (e->flushed) {
-        value = ngx_http_get_indexed_variable(e->request, code->index);
+        value = ngx_http_get_indexed_variable(r, code->index);
 
     } else {
-        value = ngx_http_get_flushed_variable(e->request, code->index);
+        value = ngx_http_get_flushed_variable(r, code->index);
     }
+
+    r->script_depth--;
 
     if (value && !value->not_found) {
         return value->len;
@@ -948,6 +978,7 @@ void
 ngx_http_script_copy_var_code(ngx_http_script_engine_t *e)
 {
     u_char                      *p;
+    ngx_http_request_t          *r;
     ngx_http_variable_value_t   *value;
     ngx_http_script_var_code_t  *code;
 
@@ -957,12 +988,17 @@ ngx_http_script_copy_var_code(ngx_http_script_engine_t *e)
 
     if (!e->skip) {
 
+        r = e->request;
+        r->script_depth++;
+
         if (e->flushed) {
-            value = ngx_http_get_indexed_variable(e->request, code->index);
+            value = ngx_http_get_indexed_variable(r, code->index);
 
         } else {
-            value = ngx_http_get_flushed_variable(e->request, code->index);
+            value = ngx_http_get_flushed_variable(r, code->index);
         }
+
+        r->script_depth--;
 
         if (value && !value->not_found) {
             p = e->pos;
@@ -1788,6 +1824,7 @@ ngx_http_script_set_var_code(ngx_http_script_engine_t *e)
 void
 ngx_http_script_var_code(ngx_http_script_engine_t *e)
 {
+    ngx_http_request_t          *r;
     ngx_http_variable_value_t   *value;
     ngx_http_script_var_code_t  *code;
 
@@ -1798,7 +1835,12 @@ ngx_http_script_var_code(ngx_http_script_engine_t *e)
 
     e->ip += sizeof(ngx_http_script_var_code_t);
 
-    value = ngx_http_get_flushed_variable(e->request, code->index);
+    r = e->request;
+    r->script_depth++;
+
+    value = ngx_http_get_flushed_variable(r, code->index);
+
+    r->script_depth--;
 
     if (value && !value->not_found) {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, e->request->connection->log, 0,
