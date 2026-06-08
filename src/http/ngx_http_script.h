@@ -102,13 +102,6 @@ typedef struct {
 
 typedef struct {
     ngx_http_script_code_pt     code;
-    ngx_http_set_variable_pt    handler;
-    uintptr_t                   data;
-} ngx_http_script_var_handler_code_t;
-
-
-typedef struct {
-    ngx_http_script_code_pt     code;
     uintptr_t                   n;
 } ngx_http_script_copy_capture_code_t;
 
@@ -259,7 +252,6 @@ void ngx_http_script_file_code(ngx_http_script_engine_t *e);
 void ngx_http_script_complex_value_code(ngx_http_script_engine_t *e);
 void ngx_http_script_value_code(ngx_http_script_engine_t *e);
 void ngx_http_script_set_var_code(ngx_http_script_engine_t *e);
-void ngx_http_script_var_set_handler_code(ngx_http_script_engine_t *e);
 void ngx_http_script_var_code(ngx_http_script_engine_t *e);
 void ngx_http_script_nop_code(ngx_http_script_engine_t *e);
 

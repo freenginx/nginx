@@ -26,7 +26,6 @@ typedef struct {
 typedef struct {
     ngx_int_t                 index;
     ngx_http_complex_value_t  value;
-    ngx_http_set_variable_pt  set_handler;
 } ngx_http_auth_request_variable_t;
 
 
@@ -239,10 +238,8 @@ ngx_http_auth_request_set_variables(ngx_http_request_t *r,
     ngx_http_auth_request_conf_t *arcf, ngx_http_auth_request_ctx_t *ctx)
 {
     ngx_str_t                          val;
-    ngx_http_variable_t               *v;
-    ngx_http_variable_value_t         *vv;
+    ngx_http_variable_value_t          vv;
     ngx_http_auth_request_variable_t  *av, *last;
-    ngx_http_core_main_conf_t         *cmcf;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "auth request set variables");
@@ -250,9 +247,6 @@ ngx_http_auth_request_set_variables(ngx_http_request_t *r,
     if (arcf->vars == NULL) {
         return NGX_OK;
     }
-
-    cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
-    v = cmcf->variables.elts;
 
     av = arcf->vars->elts;
     last = av + arcf->vars->nelts;
@@ -263,27 +257,16 @@ ngx_http_auth_request_set_variables(ngx_http_request_t *r,
          * internal redirects
          */
 
-        vv = &r->variables[av->index];
-
         if (ngx_http_complex_value(ctx->subrequest, &av->value, &val)
             != NGX_OK)
         {
             return NGX_ERROR;
         }
 
-        vv->valid = 1;
-        vv->not_found = 0;
-        vv->data = val.data;
-        vv->len = val.len;
+        vv.data = val.data;
+        vv.len = val.len;
 
-        if (av->set_handler) {
-            /*
-             * set_handler only available in cmcf->variables_keys, so we store
-             * it explicitly
-             */
-
-            av->set_handler(r, vv, v[av->index].data);
-        }
+        ngx_http_set_indexed_variable(r, av->index, &vv);
 
         av++;
     }
@@ -433,8 +416,6 @@ ngx_http_auth_request_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (v->get_handler == NULL) {
         v->get_handler = ngx_http_auth_request_variable;
     }
-
-    av->set_handler = v->set_handler;
 
     ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
 

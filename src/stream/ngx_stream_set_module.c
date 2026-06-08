@@ -12,8 +12,6 @@
 
 typedef struct {
     ngx_int_t                   index;
-    ngx_stream_set_variable_pt  set_handler;
-    uintptr_t                   data;
     ngx_stream_complex_value_t  value;
 } ngx_stream_set_cmd_t;
 
@@ -90,18 +88,10 @@ ngx_stream_set_handler(ngx_stream_session_t *s)
             return NGX_ERROR;
         }
 
-        if (cmds[i].set_handler != NULL) {
-            vv.len = str.len;
-            vv.data = str.data;
-            cmds[i].set_handler(s, &vv, cmds[i].data);
+        vv.len = str.len;
+        vv.data = str.data;
 
-        } else {
-            s->variables[cmds[i].index].len = str.len;
-            s->variables[cmds[i].index].valid = 1;
-            s->variables[cmds[i].index].no_cacheable = 0;
-            s->variables[cmds[i].index].not_found = 0;
-            s->variables[cmds[i].index].data = str.data;
-        }
+        ngx_stream_set_indexed_variable(s, cmds[i].index, &vv);
     }
 
     return NGX_DECLINED;
@@ -209,8 +199,6 @@ ngx_stream_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     }
 
     set_cmd->index = index;
-    set_cmd->set_handler = v->set_handler;
-    set_cmd->data = v->data;
 
     ngx_memzero(&ccv, sizeof(ngx_stream_compile_complex_value_t));
 

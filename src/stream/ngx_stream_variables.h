@@ -57,6 +57,9 @@ ngx_stream_variable_value_t *ngx_stream_get_flushed_variable(
 ngx_stream_variable_value_t *ngx_stream_get_variable(ngx_stream_session_t *s,
     ngx_str_t *name, ngx_uint_t key);
 
+void ngx_stream_set_indexed_variable(ngx_stream_session_t *s, ngx_uint_t index,
+    ngx_stream_variable_value_t *value);
+
 
 #if (NGX_PCRE)
 

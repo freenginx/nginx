@@ -893,11 +893,10 @@ ngx_http_rewrite_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
     ngx_http_rewrite_loc_conf_t  *lcf = conf;
 
-    ngx_int_t                            index;
-    ngx_str_t                           *value;
-    ngx_http_variable_t                 *v;
-    ngx_http_script_var_code_t          *vcode;
-    ngx_http_script_var_handler_code_t  *vhcode;
+    ngx_int_t                    index;
+    ngx_str_t                   *value;
+    ngx_http_variable_t         *v;
+    ngx_http_script_var_code_t  *vcode;
 
     value = cf->args->elts;
 
@@ -928,20 +927,6 @@ ngx_http_rewrite_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     if (ngx_http_rewrite_value(cf, lcf, &value[2]) != NGX_CONF_OK) {
         return NGX_CONF_ERROR;
-    }
-
-    if (v->set_handler) {
-        vhcode = ngx_http_script_start_code(cf->pool, &lcf->codes,
-                                   sizeof(ngx_http_script_var_handler_code_t));
-        if (vhcode == NULL) {
-            return NGX_CONF_ERROR;
-        }
-
-        vhcode->code = ngx_http_script_var_set_handler_code;
-        vhcode->handler = v->set_handler;
-        vhcode->data = v->data;
-
-        return NGX_CONF_OK;
     }
 
     vcode = ngx_http_script_start_code(cf->pool, &lcf->codes,

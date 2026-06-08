@@ -1781,43 +1781,7 @@ ngx_http_script_set_var_code(ngx_http_script_engine_t *e)
 
     e->sp--;
 
-    r->variables[code->index].len = e->sp->len;
-    r->variables[code->index].valid = 1;
-    r->variables[code->index].no_cacheable = 0;
-    r->variables[code->index].not_found = 0;
-    r->variables[code->index].data = e->sp->data;
-
-#if (NGX_DEBUG)
-    {
-    ngx_http_variable_t        *v;
-    ngx_http_core_main_conf_t  *cmcf;
-
-    cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
-
-    v = cmcf->variables.elts;
-
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, e->request->connection->log, 0,
-                   "http script set $%V", &v[code->index].name);
-    }
-#endif
-}
-
-
-void
-ngx_http_script_var_set_handler_code(ngx_http_script_engine_t *e)
-{
-    ngx_http_script_var_handler_code_t  *code;
-
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, e->request->connection->log, 0,
-                   "http script set var handler");
-
-    code = (ngx_http_script_var_handler_code_t *) e->ip;
-
-    e->ip += sizeof(ngx_http_script_var_handler_code_t);
-
-    e->sp--;
-
-    code->handler(e->request, e->sp, code->data);
+    ngx_http_set_indexed_variable(r, code->index, e->sp);
 }
 
 
