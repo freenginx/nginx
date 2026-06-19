@@ -165,11 +165,20 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
         } else {
             e.ip = tf->values->elts;
             e.pos = name;
+            e.end = name + (r->uri.len - alias) + allocated;
             e.flushed = 1;
 
             while (*(uintptr_t *) e.ip) {
                 code = *(ngx_http_script_code_pt *) e.ip;
                 code((ngx_http_script_engine_t *) &e);
+            }
+
+            if (e.status) {
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            }
+
+            if (ngx_http_script_check_length(&e, 1) != NGX_OK) {
+                return NGX_ERROR;
             }
 
             path.len = e.pos - path.data;

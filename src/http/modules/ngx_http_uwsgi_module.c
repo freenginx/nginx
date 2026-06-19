@@ -849,7 +849,7 @@ static ngx_int_t
 ngx_http_uwsgi_create_request(ngx_http_request_t *r)
 {
     u_char                        ch, sep, *lowcase_key;
-    size_t                        key_len, val_len, len, allocated;
+    size_t                        key_len, val_len, len, params_len, allocated;
     ngx_uint_t                    i, n, hash, skip_empty, header_params;
     ngx_buf_t                    *b;
     ngx_chain_t                  *cl, *body;
@@ -862,6 +862,7 @@ ngx_http_uwsgi_create_request(ngx_http_request_t *r)
     ngx_http_script_len_code_pt   lcode;
 
     len = 0;
+    params_len = 0;
     header_params = 0;
     ignored = NULL;
 
@@ -899,8 +900,10 @@ ngx_http_uwsgi_create_request(ngx_http_request_t *r)
                 continue;
             }
 
-            len += 2 + key_len + 2 + val_len;
+            params_len += 2 + key_len + 2 + val_len;
         }
+
+        len += params_len;
     }
 
     if (uwcf->upstream.pass_request_headers) {
@@ -1032,6 +1035,7 @@ ngx_http_uwsgi_create_request(ngx_http_request_t *r)
 
         e.ip = params->values->elts;
         e.pos = b->last;
+        e.end = b->last + params_len;
         e.request = r;
         e.flushed = 1;
 
@@ -1064,11 +1068,23 @@ ngx_http_uwsgi_create_request(ngx_http_request_t *r)
                 continue;
             }
 
+            if (ngx_http_script_check_length(&e, 2) != NGX_OK) {
+                return NGX_ERROR;
+            }
+
             *e.pos++ = (u_char) (key_len & 0xff);
             *e.pos++ = (u_char) ((key_len >> 8) & 0xff);
 
             code = *(ngx_http_script_code_pt *) e.ip;
             code((ngx_http_script_engine_t *) &e);
+
+            if (e.status) {
+                return NGX_ERROR;
+            }
+
+            if (ngx_http_script_check_length(&e, 2) != NGX_OK) {
+                return NGX_ERROR;
+            }
 
             *e.pos++ = (u_char) (val_len & 0xff);
             *e.pos++ = (u_char) ((val_len >> 8) & 0xff);
@@ -1076,6 +1092,10 @@ ngx_http_uwsgi_create_request(ngx_http_request_t *r)
             while (*(uintptr_t *) e.ip) {
                 code = *(ngx_http_script_code_pt *) e.ip;
                 code((ngx_http_script_engine_t *) &e);
+            }
+
+            if (e.status) {
+                return NGX_ERROR;
             }
 
             e.ip += sizeof(uintptr_t);
