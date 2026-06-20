@@ -916,6 +916,15 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
                        "grpc header: \":method: POST\"");
 
     } else {
+
+        if (r->method_name.len > NGX_HTTP_V2_MAX_FIELD) {
+            ngx_log_error(NGX_LOG_CRIT, r->connection->log, 0,
+                          "too long grpc request header value: "
+                          "\":method: %*s...\"",
+                          256, r->method_name.data);
+            return NGX_ERROR;
+        }
+
         *b->last++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_METHOD_INDEX);
         b->last = ngx_http_v2_write_value(b->last, r->method_name.data,
                                           r->method_name.len, tmp);
@@ -940,6 +949,14 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
     }
 
     if (r->valid_unparsed_uri) {
+
+        if (r->unparsed_uri.len > NGX_HTTP_V2_MAX_FIELD) {
+            ngx_log_error(NGX_LOG_CRIT, r->connection->log, 0,
+                          "too long grpc request header value: "
+                          "\":path: %*s...\"",
+                          256, r->unparsed_uri.data);
+            return NGX_ERROR;
+        }
 
         if (r->unparsed_uri.len == 1 && r->unparsed_uri.data[0] == '/') {
             *b->last++ = ngx_http_v2_indexed(NGX_HTTP_V2_PATH_ROOT_INDEX);
@@ -969,6 +986,14 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
             p = ngx_copy(p, r->args.data, r->args.len);
         }
 
+        if (p - val_tmp > NGX_HTTP_V2_MAX_FIELD) {
+            ngx_log_error(NGX_LOG_CRIT, r->connection->log, 0,
+                          "too long grpc request header value: "
+                          "\":path: %*s...\"",
+                          256, val_tmp);
+            return NGX_ERROR;
+        }
+
         *b->last++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_PATH_INDEX);
         b->last = ngx_http_v2_write_value(b->last, val_tmp, p - val_tmp, tmp);
 
@@ -976,6 +1001,15 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
                        "grpc header: \":path: %*s\"", p - val_tmp, val_tmp);
 
     } else {
+
+        if (r->uri.len > NGX_HTTP_V2_MAX_FIELD) {
+            ngx_log_error(NGX_LOG_CRIT, r->connection->log, 0,
+                          "too long grpc request header value: "
+                          "\":path: %*s...\"",
+                          256, r->uri.data);
+            return NGX_ERROR;
+        }
+
         *b->last++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_PATH_INDEX);
         b->last = ngx_http_v2_write_value(b->last, r->uri.data,
                                           r->uri.len, tmp);
@@ -985,6 +1019,15 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
     }
 
     if (!glcf->host_set) {
+
+        if (ctx->host.len > NGX_HTTP_V2_MAX_FIELD) {
+            ngx_log_error(NGX_LOG_CRIT, r->connection->log, 0,
+                          "too long grpc request header value: "
+                          "\":authority: %*s...\"",
+                          256, ctx->host.data);
+            return NGX_ERROR;
+        }
+
         *b->last++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_AUTHORITY_INDEX);
         b->last = ngx_http_v2_write_value(b->last, ctx->host.data,
                                           ctx->host.len, tmp);
@@ -1045,6 +1088,14 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
             return NGX_ERROR;
         }
 
+        if (key_len > NGX_HTTP_V2_MAX_FIELD) {
+            ngx_log_error(NGX_LOG_CRIT, r->connection->log, 0,
+                          "too long grpc request header name: "
+                          "\"%*s...\"",
+                          256, key_tmp);
+            return NGX_ERROR;
+        }
+
         b->last = ngx_http_v2_write_name(b->last, key_tmp, key_len, tmp);
 
         e.pos = val_tmp;
@@ -1063,6 +1114,14 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
         if (headers_end - b->last < (ssize_t) val_len) {
             ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
                           "no buffer space in grpc create request");
+            return NGX_ERROR;
+        }
+
+        if (val_len > NGX_HTTP_V2_MAX_FIELD) {
+            ngx_log_error(NGX_LOG_CRIT, r->connection->log, 0,
+                          "too long grpc request header value: "
+                          "\"%*s: %*s...\"",
+                          key_len, key_tmp, 256, val_tmp);
             return NGX_ERROR;
         }
 
@@ -1102,6 +1161,22 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
             }
 
             *b->last++ = 0;
+
+            if (header[i].key.len > NGX_HTTP_V2_MAX_FIELD) {
+                ngx_log_error(NGX_LOG_CRIT, r->connection->log, 0,
+                              "too long grpc request header name: "
+                              "\"%*s...\"",
+                              256, header[i].key.data);
+                return NGX_ERROR;
+            }
+
+            if (header[i].value.len > NGX_HTTP_V2_MAX_FIELD) {
+                ngx_log_error(NGX_LOG_CRIT, r->connection->log, 0,
+                              "too long grpc request header value: "
+                              "\"%V: %*s...\"",
+                              &header[i].key, 256, header[i].value.data);
+                return NGX_ERROR;
+            }
 
             b->last = ngx_http_v2_write_name(b->last, header[i].key.data,
                                              header[i].key.len, tmp);
