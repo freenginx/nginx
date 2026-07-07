@@ -7,6 +7,138 @@
 <section title="freenginx">
 
 
+<changes ver="1.31.3" date="2026-07-07">
+
+<change type="feature">
+<para lang="ru">
+теперь при подстановке переменных,
+в том числе при выполнении директив модуля ngx_http_rewrite_module,
+используются дополнительные проверки,
+позволяющие предотвратить выход за границы буфера
+в случае каких-либо ошибок в коде.
+</para>
+<para lang="en">
+additional checks are now used during variable substitution,
+including during execution of the ngx_http_rewrite_module directives,
+to prevent buffer overruns
+in case of errors in the code.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+при использовании директивы auth_request_set
+или именованных выделений в регулярных выражениях
+для изменения префиксных переменных, таких как "$http_...",
+соответствующие переменные оказывались пустыми в других частях конфигурации.
+</para>
+<para lang="en">
+if the "auth_request_set" directive
+or regular expression named captures
+were used to change prefix variables, such as "$http_...",
+corresponding variables became empty in other parts of the configuration.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+изменение переменных $limit_rate и $args
+с помощью директивы auth_request_set
+или именованных выделений в регулярных выражениях
+работало некорректно.
+</para>
+<para lang="en">
+changing the $limit_rate and $args variables
+with the "auth_request_set" directive
+or regular expression named captures
+worked incorrectly.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в обработке ошибок в почтовом прокси-сервере.<br/>
+Спасибо Evan Hellman, Trail of Bits.
+</para>
+<para lang="en">
+in error handling in the mail proxy module.<br/>
+Thanks to Evan Hellman, Trail of Bits.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в обработке ошибок при использовании сжатия.<br/>
+Спасибо Evan Hellman, Trail of Bits.
+</para>
+<para lang="en">
+in error handling when using gzipping.<br/>
+Thanks to Evan Hellman, Trail of Bits.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в HTTP/3.
+</para>
+<para lang="en">
+in HTTP/3.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault
+при отправке на gRPC-бэкенд очень длинных строк заголовка запроса.<br/>
+Спасибо Evan Hellman, Trail of Bits.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+when sending very long request header lines to a gRPC backend.<br/>
+Thanks to Evan Hellman, Trail of Bits.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в рабочем процессе мог произойти segmentation fault,
+если модуль ngx_http_charset_module использовался
+для перекодирования ответов из UTF-8.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the ngx_http_charset_module was used
+to convert responses from UTF-8.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в модуле ngx_http_perl_module.<br/>
+Спасибо Evan Hellman, Trail of Bits
+и Axel Mierczuk, Keith Hoodlet, 1Password's Off-by-1 Labs.
+</para>
+<para lang="en">
+in the ngx_http_perl_module.<br/>
+Thanks to Evan Hellman, Trail of Bits
+and Axel Mierczuk, Keith Hoodlet, 1Password's Off-by-1 Labs.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+в обработке ошибок при использовании директивы proxy_no_cache.<br/>
+Спасибо Valentin Bartenev.
+</para>
+<para lang="en">
+in error handling when using the proxy_no_cache directive.<br/>
+Thanks to Valentin Bartenev.
+</para>
+</change>
+
+</changes>
+
+
 <changes ver="1.31.2" date="2026-05-26">
 
 <change type="bugfix">
