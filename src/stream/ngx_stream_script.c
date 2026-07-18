@@ -41,12 +41,7 @@ ngx_stream_script_flush_complex_value(ngx_stream_session_t *s,
 
     if (index) {
         while (*index != (ngx_uint_t) -1) {
-
-            if (s->variables[*index].no_cacheable) {
-                s->variables[*index].valid = 0;
-                s->variables[*index].not_found = 0;
-            }
-
+            (void) ngx_stream_get_flushed_variable(s, *index);
             index++;
         }
     }
@@ -547,10 +542,7 @@ ngx_stream_script_flush_no_cacheable_variables(ngx_stream_session_t *s,
     if (indices) {
         index = indices->elts;
         for (n = 0; n < indices->nelts; n++) {
-            if (s->variables[index[n]].no_cacheable) {
-                s->variables[index[n]].valid = 0;
-                s->variables[index[n]].not_found = 0;
-            }
+            (void) ngx_stream_get_flushed_variable(s, index[n]);
         }
     }
 }

@@ -1340,10 +1340,9 @@ ngx_http_proxy_create_request(ngx_http_request_t *r)
 
     ngx_memzero(&le, sizeof(ngx_http_script_engine_t));
 
-    ngx_http_script_flush_no_cacheable_variables(r, plcf->body_flushes);
-    ngx_http_script_flush_no_cacheable_variables(r, headers->flushes);
-
     if (plcf->body_lengths) {
+        ngx_http_script_flush_no_cacheable_variables(r, plcf->body_flushes);
+
         le.ip = plcf->body_lengths->elts;
         le.request = r;
         le.flushed = 1;
@@ -1366,6 +1365,8 @@ ngx_http_proxy_create_request(ngx_http_request_t *r)
     } else {
         ctx->internal_body_length = r->headers_in.content_length_n;
     }
+
+    ngx_http_script_flush_no_cacheable_variables(r, headers->flushes);
 
     le.ip = headers->lengths->elts;
     le.request = r;
