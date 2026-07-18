@@ -1154,11 +1154,16 @@ ngx_http_script_regex_start_code(ngx_http_script_engine_t *e)
         }
     }
 
+    if (e->flushed) {
+        ngx_http_script_flush_no_cacheable_variables(e->request, code->flushes);
+    }
+
     ngx_memzero(&le, sizeof(ngx_http_script_engine_t));
 
     le.ip = code->lengths->elts;
     le.line = e->line;
     le.request = r;
+    le.flushed = e->flushed;
     le.quote = code->redirect;
     le.is_args = e->is_args;
 
@@ -1771,11 +1776,16 @@ ngx_http_script_complex_value_code(ngx_http_script_engine_t *e)
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, e->request->connection->log, 0,
                    "http script complex value");
 
+    if (e->flushed) {
+        ngx_http_script_flush_no_cacheable_variables(e->request, code->flushes);
+    }
+
     ngx_memzero(&le, sizeof(ngx_http_script_engine_t));
 
     le.ip = code->lengths->elts;
     le.line = e->line;
     le.request = e->request;
+    le.flushed = e->flushed;
     le.quote = e->quote;
     le.is_args = e->is_args;
 

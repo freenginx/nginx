@@ -171,6 +171,7 @@ ngx_http_rewrite_handler(ngx_http_request_t *r)
 
     e->ip = rlcf->codes->elts;
     e->request = r;
+    e->flushed = 1;
     e->quote = 1;
     e->log = rlcf->log;
     e->status = NGX_DECLINED;
@@ -389,6 +390,7 @@ ngx_http_rewrite(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     sc.cf = cf;
     sc.source = &value[2];
+    sc.flushes = &regex->flushes;
     sc.lengths = &regex->lengths;
     sc.values = &lcf->codes;
     sc.variables = ngx_http_script_variables_count(&value[2]);
@@ -981,12 +983,14 @@ ngx_http_rewrite_value(ngx_conf_t *cf, ngx_http_rewrite_loc_conf_t *lcf,
     }
 
     complex->code = ngx_http_script_complex_value_code;
+    complex->flushes = NULL;
     complex->lengths = NULL;
 
     ngx_memzero(&sc, sizeof(ngx_http_script_compile_t));
 
     sc.cf = cf;
     sc.source = value;
+    sc.flushes = &complex->flushes;
     sc.lengths = &complex->lengths;
     sc.values = &lcf->codes;
     sc.variables = n;
