@@ -150,6 +150,14 @@ ngx_http_index_handler(ngx_http_request_t *r)
             e.ip = index[i].lengths->elts;
             e.request = r;
 
+            while (*(uintptr_t *) e.ip) {
+                lcode = *(ngx_http_script_len_code_pt *) e.ip;
+                (void) lcode(&e);
+            }
+
+            e.ip = index[i].lengths->elts;
+            e.flushed = 1;
+
             /* 1 is for terminating '\0' as in static names */
             len = 1;
 
