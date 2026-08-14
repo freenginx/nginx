@@ -689,51 +689,6 @@ print(r, ...)
         croak("print(): header not sent");
     }
 
-    if (items == 2) {
-
-        /*
-         * do zero copy for prolate single SV:
-         *     $r->print("some text\n");
-         */
-
-        sv = ST(1);
-
-        if (SvROK(sv) && SvTYPE(SvRV(sv)) == SVt_PV) {
-            sv = SvRV(sv);
-        }
-
-        if (SvPOK(sv)) {
-
-            p = (u_char *) SvPV(sv, len);
-
-            if (len == 0) {
-                XSRETURN_EMPTY;
-            }
-
-            if (ngx_http_perl_refcount(aTHX_ r, sv) != NGX_OK) {
-                ctx->error = 1;
-                croak("ngx_http_perl_refcount() failed");
-            }
-
-            b = ngx_calloc_buf(r->pool);
-            if (b == NULL) {
-                ctx->error = 1;
-                croak("ngx_calloc_buf() failed");
-            }
-
-            b->memory = 1;
-            b->pos = p;
-            b->last = p + len;
-            b->start = p;
-            b->end = b->last;
-
-            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                           "$r->print: single SV: %z", len);
-
-            goto out;
-        }
-    }
-
     size = 0;
 
     for (i = 1; i < items; i++) {
@@ -772,8 +727,6 @@ print(r, ...)
         p = (u_char *) SvPV(sv, len);
         b->last = ngx_cpymem(b->last, p, len);
     }
-
-    out:
 
     rc = ngx_http_perl_output(r, ctx, b);
 
