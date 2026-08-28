@@ -2680,6 +2680,8 @@ ngx_http_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
                 pr->postponed = pr->postponed->next;
             }
 
+            r->write_event_handler = ngx_http_request_empty_handler;
+
             c->data = pr;
 
         } else {
