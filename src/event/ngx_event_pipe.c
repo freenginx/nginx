@@ -565,6 +565,21 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
 
         if (p->upstream_eof || p->upstream_error || p->upstream_done) {
 
+            /* the first free buf is partially filled */
+
+            if (p->upstream_error
+                && p->free_raw_bufs
+                && p->free_raw_bufs->buf->pos != p->free_raw_bufs->buf->last)
+            {
+                /* STUB */ p->free_raw_bufs->buf->num = p->num++;
+
+                if (p->input_filter(p, p->free_raw_bufs->buf) == NGX_ERROR) {
+                    return NGX_ABORT;
+                }
+
+                p->free_raw_bufs = p->free_raw_bufs->next;
+            }
+
             /* pass the p->out and p->in chains to the output filter */
 
             for (cl = p->busy; cl; cl = cl->next) {

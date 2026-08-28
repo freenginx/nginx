@@ -4236,6 +4236,11 @@ ngx_http_upstream_process_upstream(ngx_http_request_t *r,
         p->upstream_error = 1;
         ngx_connection_error(c, NGX_ETIMEDOUT, "upstream timed out");
 
+        if (ngx_event_pipe(p, 1) == NGX_ABORT) {
+            ngx_http_upstream_finalize_request(r, u, NGX_ERROR);
+            return;
+        }
+
     } else {
 
         if (rev->delayed) {
