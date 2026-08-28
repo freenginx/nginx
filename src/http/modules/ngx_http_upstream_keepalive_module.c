@@ -264,6 +264,10 @@ ngx_http_upstream_get_keepalive_peer(ngx_peer_connection_t *pc, void *data)
         item = ngx_queue_data(q, ngx_http_upstream_keepalive_cache_t, queue);
         c = item->connection;
 
+        if (c->read->ready) {
+            continue;
+        }
+
         if (ngx_memn2cmp((u_char *) &item->sockaddr, (u_char *) pc->sockaddr,
                          item->socklen, pc->socklen)
             == 0)
