@@ -1298,7 +1298,7 @@ when a timeout occurred during reading a request body.
 
 <change type="bugfix">
 <para lang="ru">
-перенаправление ошибок 413 с помощью дерективы error_page
+перенаправление ошибок 413 с помощью директивы error_page
 работало некорректно при использовании HTTP/2 и HTTP/3.
 </para>
 <para lang="en">
@@ -25706,7 +25706,7 @@ nginx supports the request body size more than 2G.
 <change type="bugfix">
 <para lang="ru">
 если при использовании "satisfy_any on" клиент успешно проходил аутентификацию,
-в лог всё равно записалоcь сообщение "access forbidden by rule".
+в лог всё равно записалось сообщение "access forbidden by rule".
 </para>
 <para lang="en">
 if a client was successfully authorized using "satisfy_any on", then anyway
@@ -27292,7 +27292,7 @@ the "map" directive supports domain names in the ".domain.tld" form.
 
 <change type="bugfix">
 <para lang="ru">
-во время SSL handshake не иcпользовались таймауты;
+во время SSL handshake не использовались таймауты;
 ошибка появилась в 0.2.4.
 </para>
 <para lang="en">
