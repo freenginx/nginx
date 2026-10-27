@@ -7,6 +7,26 @@
 <section title="freenginx">
 
 
+<changes ver="1.30.2" date="2026-10-27">
+
+<change type="security">
+<para lang="ru">
+при автоматическом изменении ключей шифрования TLS session tickets
+один из ключей оставался неинициализированным,
+что позволяло подделать сессию
+и обойти проверку клиентских сертификатов (CVE-2026-97629).
+</para>
+<para lang="en">
+one of the keys was left uninitialized
+when using automatic rotation of TLS session ticket keys,
+making it possible to forge a session
+and bypass client certificate verification (CVE-2026-97629);
+</para>
+</change>
+
+</changes>
+
+
 <changes ver="1.30.1" date="2026-06-02">
 
 <change type="change">
