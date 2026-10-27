@@ -473,8 +473,8 @@ struct ngx_http_request_s {
     ngx_http_cleanup_t               *cleanup;
 
     unsigned                          count:16;
+    unsigned                          blocked:16;
     unsigned                          subrequests:8;
-    unsigned                          blocked:8;
 
     unsigned                          aio:1;
 
