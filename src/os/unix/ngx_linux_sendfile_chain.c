@@ -380,6 +380,10 @@ ngx_linux_sendfile_thread(ngx_connection_t *c, ngx_buf_t *file, size_t size)
         return ctx->sent;
     }
 
+    if (task->event.active) {
+        return NGX_DONE;
+    }
+
     ctx->file = file;
     ctx->socket = c->fd;
     ctx->size = size;
