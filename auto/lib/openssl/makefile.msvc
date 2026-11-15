@@ -6,6 +6,8 @@
 all:
 	cd $(OPENSSL)
 
+	del /q /f openssl\include\openssl\ssl.h
+
 	perl Configure $(OPENSSL_TARGET) no-shared no-threads		\
 		--prefix="%cd%/openssl" 				\
 		--openssldir="%cd%/openssl/ssl" 			\
