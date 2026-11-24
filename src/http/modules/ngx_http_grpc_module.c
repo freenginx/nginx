@@ -3842,8 +3842,9 @@ ngx_http_grpc_parse_window_update(ngx_http_request_t *r,
 
     if (ctx->stream_id) {
 
-        if (ctx->window_update > (size_t) NGX_HTTP_V2_MAX_WINDOW
-                                 - ctx->send_window)
+        if (ctx->window_update > NGX_HTTP_V2_MAX_WINDOW
+            || ctx->send_window > (ssize_t) (NGX_HTTP_V2_MAX_WINDOW
+                                  - ctx->window_update))
         {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                           "upstream sent too large window update");
@@ -3855,7 +3856,8 @@ ngx_http_grpc_parse_window_update(ngx_http_request_t *r,
     } else {
 
         if (ctx->window_update > NGX_HTTP_V2_MAX_WINDOW
-                                 - ctx->connection->send_window)
+            || ctx->connection->send_window > NGX_HTTP_V2_MAX_WINDOW
+                                              - ctx->window_update)
         {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                           "upstream sent too large window update");
