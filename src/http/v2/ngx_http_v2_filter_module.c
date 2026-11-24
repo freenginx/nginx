@@ -1565,7 +1565,14 @@ ngx_http_v2_filter_cleanup(void *data)
         }
     }
 
-    h2c->send_window += window;
+    if (window > NGX_HTTP_V2_MAX_WINDOW
+        || h2c->send_window > NGX_HTTP_V2_MAX_WINDOW - window)
+    {
+        h2c->send_window = NGX_HTTP_V2_MAX_WINDOW;
+
+    } else {
+        h2c->send_window += window;
+    }
 }
 
 
