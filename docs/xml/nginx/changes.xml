@@ -20,7 +20,7 @@
 one of the keys was left uninitialized
 when using automatic rotation of TLS session ticket keys,
 making it possible to forge a session
-and bypass client certificate verification (CVE-2026-97629);
+and bypass client certificate verification (CVE-2026-97629).
 </para>
 </change>
 
