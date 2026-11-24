@@ -7,6 +7,108 @@
 <section title="freenginx">
 
 
+<changes ver="1.31.6" date="2026-11-24">
+
+<change type="security">
+<para lang="ru">
+при использовании HTTP/2
+переполнение окна управления потоком
+могло вызвать повреждение памяти рабочего процесса,
+что потенциально могло приводить к выполнению произвольного кода
+(CVE-2026-123007).
+</para>
+<para lang="en">
+a flow control window overflow
+might cause memory corruption in a worker process
+when using HTTP/2,
+potentially resulting in arbitrary code execution
+(CVE-2026-123007).
+</para>
+</change>
+
+<change type="security">
+<para lang="ru">
+при использовании HTTP/2
+могло происходить обращение к ранее освобождённой памяти,
+что потенциально могло приводить к выполнению произвольного кода
+(CVE-2026-123633).
+</para>
+<para lang="en">
+use-after-free might occur
+when using HTTP/2,
+potentially resulting in arbitrary code execution
+(CVE-2026-123633).
+</para>
+</change>
+
+<change type="security">
+<para lang="ru">
+при использовании HTTP/3
+могло происходить обращение к ранее освобождённой памяти,
+что потенциально могло приводить к выполнению произвольного кода
+(CVE-2026-121810).
+</para>
+<para lang="en">
+use-after-free might occur
+when using HTTP/3,
+potentially resulting in arbitrary code execution
+(CVE-2026-121810).
+</para>
+</change>
+
+<change type="security">
+<para lang="ru">
+при использовании почтового прокси-сервера
+могло происходить обращение к ранее освобождённой памяти,
+что потенциально могло приводить к выполнению произвольного кода
+(CVE-2026-113425).
+</para>
+<para lang="en">
+use-after-free might occur
+when using the mail proxy module,
+potentially resulting in arbitrary code execution
+(CVE-2026-113425).
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+при использовании директивы resolver в подзапросах
+в рабочем процессе мог произойти segmentation fault.
+</para>
+<para lang="en">
+a segmentation fault might occur in a worker process
+if the "resolver" directive was used in subrequests.
+</para>
+</change>
+
+<change type="bugfix">
+<para lang="ru">
+при использовании директивы ssl_early_data
+могло наблюдаться чрезмерное потребление ресурсов процессора.
+</para>
+<para lang="en">
+excessive CPU usage might be observed
+when using the "ssl_early_data" directive.
+</para>
+</change>
+
+<change type="workaround">
+<para lang="ru">
+при использовании параметра --with-openssl для сборки OpenSSL 4.1
+могла неожиданно выполняться повторная сборка OpenSSL.<br/>
+Спасибо nisbet-hubbard.
+</para>
+<para lang="en">
+OpenSSL might be rebuilt unexpectedly
+when using the --with-openssl option to build OpenSSL 4.1.<br/>
+Thanks to nisbet-hubbard.
+</para>
+</change>
+
+</changes>
+
+
 <changes ver="1.31.5" date="2026-10-27">
 
 <change type="security">
