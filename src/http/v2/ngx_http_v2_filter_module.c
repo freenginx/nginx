@@ -975,7 +975,7 @@ ngx_http_v2_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
     cl = NULL;
 #endif
 
-    for ( ;; ) {
+    while (limit > 0) {
         if ((off_t) frame_size > limit) {
             frame_size = (size_t) limit;
         }
@@ -1070,10 +1070,6 @@ ngx_http_v2_send_chain(ngx_connection_t *fc, ngx_chain_t *in, off_t limit)
         }
 
         limit -= frame_size;
-
-        if (limit == 0) {
-            break;
-        }
     }
 
     if (offset) {
