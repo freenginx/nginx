@@ -112,6 +112,8 @@ static void *ngx_resolver_calloc(ngx_resolver_t *r, size_t size);
 static void ngx_resolver_free(ngx_resolver_t *r, void *p);
 static void ngx_resolver_free_locked(ngx_resolver_t *r, void *p);
 static void *ngx_resolver_dup(ngx_resolver_t *r, void *src, size_t size);
+static void ngx_resolver_link_waiting(ngx_resolver_t *r,
+    ngx_resolver_node_t *rn, ngx_resolver_ctx_t *ctx);
 static ngx_resolver_addr_t *ngx_resolver_export(ngx_resolver_t *r,
     ngx_resolver_node_t *rn, ngx_uint_t rotate);
 static void ngx_resolver_report_srv(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx);
@@ -612,7 +614,6 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
     ngx_uint_t            i, naddrs;
     ngx_queue_t          *resend_queue, *expire_queue;
     ngx_rbtree_t         *tree;
-    ngx_resolver_ctx_t   *next, *last;
     ngx_resolver_addr_t  *addrs;
     ngx_resolver_node_t  *rn;
 
@@ -636,9 +637,6 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
     }
 
     if (rn) {
-
-        /* ctx can be a list after NGX_RESOLVE_CNAME */
-        for (last = ctx; last->next; last = last->next);
 
         if (rn->valid >= ngx_time()) {
 
@@ -667,12 +665,12 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
                     }
                 }
 
-                last->next = rn->waiting;
-                rn->waiting = NULL;
+                ngx_resolver_link_waiting(r, rn, ctx);
 
-                /* unlock name mutex */
+                while (rn->waiting) {
+                    ctx = rn->waiting;
+                    rn->waiting = ctx->next;
 
-                do {
                     ctx->state = NGX_OK;
                     ctx->valid = rn->valid;
                     ctx->naddrs = naddrs;
@@ -689,12 +687,8 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
                         ctx->addrs = addrs;
                     }
 
-                    next = ctx->next;
-
                     ctx->handler(ctx);
-
-                    ctx = next;
-                } while (ctx);
+                }
 
                 if (addrs != NULL) {
                     ngx_resolver_free(r, addrs->sockaddr);
@@ -705,18 +699,14 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
             }
 
             if (rn->nsrvs) {
-                last->next = rn->waiting;
-                rn->waiting = NULL;
+                ngx_resolver_link_waiting(r, rn, ctx);
 
-                /* unlock name mutex */
-
-                do {
-                    next = ctx->next;
+                while (rn->waiting) {
+                    ctx = rn->waiting;
+                    rn->waiting = ctx->next;
 
                     ngx_resolver_resolve_srv_names(ctx, rn);
-
-                    ctx = next;
-                } while (ctx);
+                }
 
                 return NGX_OK;
             }
@@ -731,20 +721,17 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
                 return ngx_resolve_name_locked(r, ctx, &cname);
             }
 
-            last->next = rn->waiting;
-            rn->waiting = NULL;
+            ngx_resolver_link_waiting(r, rn, ctx);
 
-            /* unlock name mutex */
+            while (rn->waiting) {
+                ctx = rn->waiting;
+                rn->waiting = ctx->next;
 
-            do {
                 ctx->state = NGX_RESOLVE_NXDOMAIN;
                 ctx->valid = ngx_time() + (r->valid ? r->valid : 10);
-                next = ctx->next;
 
                 ctx->handler(ctx);
-
-                ctx = next;
-            } while (ctx);
+            }
 
             return NGX_OK;
         }
@@ -754,15 +741,10 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
                 return NGX_ERROR;
             }
 
-            last->next = rn->waiting;
-            rn->waiting = ctx;
+            ngx_resolver_link_waiting(r, rn, ctx);
+
             ctx->state = NGX_AGAIN;
             ctx->async = 1;
-
-            do {
-                ctx->node = rn;
-                ctx = ctx->next;
-            } while (ctx);
 
             return NGX_AGAIN;
         }
@@ -824,6 +806,7 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
 #if (NGX_HAVE_INET6)
         rn->query6 = NULL;
 #endif
+        rn->waiting = NULL;
 
         ngx_rbtree_insert(tree, &rn->node);
     }
@@ -842,18 +825,20 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
     if (rc == NGX_DECLINED) {
         ngx_rbtree_delete(tree, &rn->node);
 
+        ngx_resolver_link_waiting(r, rn, ctx);
+
+        while (rn->waiting) {
+            ctx = rn->waiting;
+            rn->waiting = ctx->next;
+
+            ctx->state = NGX_RESOLVE_NXDOMAIN;
+
+            ctx->handler(ctx);
+        }
+
         ngx_resolver_free(r, rn->query);
         ngx_resolver_free(r, rn->name);
         ngx_resolver_free(r, rn);
-
-        do {
-            ctx->state = NGX_RESOLVE_NXDOMAIN;
-            next = ctx->next;
-
-            ctx->handler(ctx);
-
-            ctx = next;
-        } while (ctx);
 
         return NGX_OK;
     }
@@ -899,15 +884,11 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx,
     rn->cnlen = 0;
     rn->valid = 0;
     rn->ttl = NGX_MAX_UINT32_VALUE;
-    rn->waiting = ctx;
+
+    ngx_resolver_link_waiting(r, rn, ctx);
 
     ctx->state = NGX_AGAIN;
     ctx->async = 1;
-
-    do {
-        ctx->node = rn;
-        ctx = ctx->next;
-    } while (ctx);
 
     return NGX_AGAIN;
 
@@ -1021,11 +1002,10 @@ ngx_resolve_addr(ngx_resolver_ctx_t *ctx)
                 return NGX_ERROR;
             }
 
-            ctx->next = rn->waiting;
-            rn->waiting = ctx;
+            ngx_resolver_link_waiting(r, rn, ctx);
+
             ctx->state = NGX_AGAIN;
             ctx->async = 1;
-            ctx->node = rn;
 
             /* unlock addr mutex */
 
@@ -1063,6 +1043,7 @@ ngx_resolve_addr(ngx_resolver_ctx_t *ctx)
 #if (NGX_HAVE_INET6)
         rn->query6 = NULL;
 #endif
+        rn->waiting = NULL;
 
         ngx_rbtree_insert(tree, &rn->node);
     }
@@ -1114,13 +1095,13 @@ ngx_resolve_addr(ngx_resolver_ctx_t *ctx)
     rn->nlen = 0;
     rn->valid = 0;
     rn->ttl = NGX_MAX_UINT32_VALUE;
-    rn->waiting = ctx;
+
+    ngx_resolver_link_waiting(r, rn, ctx);
 
     /* unlock addr mutex */
 
     ctx->state = NGX_AGAIN;
     ctx->async = 1;
-    ctx->node = rn;
 
     return NGX_OK;
 
@@ -2128,20 +2109,16 @@ ngx_resolver_process_a(ngx_resolver_t *r, u_char *buf, size_t n,
         }
 #endif
 
-        next = rn->waiting;
-        rn->waiting = NULL;
-
         ngx_queue_remove(&rn->queue);
 
         ngx_rbtree_delete(&r->name_rbtree, &rn->node);
 
-        /* unlock name mutex */
+        while (rn->waiting) {
+            ctx = rn->waiting;
+            rn->waiting = ctx->next;
 
-        while (next) {
-            ctx = next;
             ctx->state = code;
             ctx->valid = ngx_time() + (r->valid ? r->valid : 10);
-            next = ctx->next;
 
             ctx->handler(ctx);
         }
@@ -2447,13 +2424,10 @@ ngx_resolver_process_a(ngx_resolver_t *r, u_char *buf, size_t n,
 
         ngx_queue_insert_head(&r->name_expire_queue, &rn->queue);
 
-        next = rn->waiting;
-        rn->waiting = NULL;
+        while (rn->waiting) {
+            ctx = rn->waiting;
+            rn->waiting = ctx->next;
 
-        /* unlock name mutex */
-
-        while (next) {
-            ctx = next;
             ctx->state = NGX_OK;
             ctx->valid = rn->valid;
             ctx->naddrs = naddrs;
@@ -2469,8 +2443,6 @@ ngx_resolver_process_a(ngx_resolver_t *r, u_char *buf, size_t n,
             } else {
                 ctx->addrs = addrs;
             }
-
-            next = ctx->next;
 
             ctx->handler(ctx);
         }
@@ -2526,25 +2498,24 @@ ngx_resolver_process_a(ngx_resolver_t *r, u_char *buf, size_t n,
 #endif
 
         ctx = rn->waiting;
-        rn->waiting = NULL;
 
         if (ctx) {
 
             if (ctx->recursion++ >= NGX_RESOLVER_MAX_RECURSION) {
 
-                /* unlock name mutex */
-
                 do {
                     ctx->state = NGX_RESOLVE_NXDOMAIN;
-                    next = ctx->next;
+                    rn->waiting = ctx->next;
 
                     ctx->handler(ctx);
 
-                    ctx = next;
+                    ctx = rn->waiting;
                 } while (ctx);
 
                 return;
             }
+
+            rn->waiting = NULL;
 
             for (next = ctx; next; next = next->next) {
                 next->node = NULL;
@@ -2552,8 +2523,6 @@ ngx_resolver_process_a(ngx_resolver_t *r, u_char *buf, size_t n,
 
             (void) ngx_resolve_name_locked(r, ctx, &name);
         }
-
-        /* unlock name mutex */
 
         return;
     }
@@ -2672,18 +2641,16 @@ ngx_resolver_process_srv(ngx_resolver_t *r, u_char *buf, size_t n,
     }
 
     if (code) {
-        next = rn->waiting;
-        rn->waiting = NULL;
-
         ngx_queue_remove(&rn->queue);
 
         ngx_rbtree_delete(&r->srv_rbtree, &rn->node);
 
-        while (next) {
-            ctx = next;
+        while (rn->waiting) {
+            ctx = rn->waiting;
+            rn->waiting = ctx->next;
+
             ctx->state = code;
             ctx->valid = ngx_time() + (r->valid ? r->valid : 10);
-            next = ctx->next;
 
             ctx->handler(ctx);
         }
@@ -2868,12 +2835,9 @@ ngx_resolver_process_srv(ngx_resolver_t *r, u_char *buf, size_t n,
 
         ngx_queue_insert_head(&r->srv_expire_queue, &rn->queue);
 
-        next = rn->waiting;
-        rn->waiting = NULL;
-
-        while (next) {
-            ctx = next;
-            next = ctx->next;
+        while (rn->waiting) {
+            ctx = rn->waiting;
+            rn->waiting = ctx->next;
 
             ngx_resolver_resolve_srv_names(ctx, rn);
         }
@@ -2911,25 +2875,24 @@ ngx_resolver_process_srv(ngx_resolver_t *r, u_char *buf, size_t n,
 #endif
 
         ctx = rn->waiting;
-        rn->waiting = NULL;
 
         if (ctx) {
 
             if (ctx->recursion++ >= NGX_RESOLVER_MAX_RECURSION) {
 
-                /* unlock name mutex */
-
                 do {
                     ctx->state = NGX_RESOLVE_NXDOMAIN;
-                    next = ctx->next;
+                    rn->waiting = ctx->next;
 
                     ctx->handler(ctx);
 
-                    ctx = next;
+                    ctx = rn->waiting;
                 } while (ctx);
 
                 return;
             }
+
+            rn->waiting = NULL;
 
             for (next = ctx; next; next = next->next) {
                 next->node = NULL;
@@ -2937,8 +2900,6 @@ ngx_resolver_process_srv(ngx_resolver_t *r, u_char *buf, size_t n,
 
             (void) ngx_resolve_name_locked(r, ctx, &name);
         }
-
-        /* unlock name mutex */
 
         return;
     }
@@ -3112,7 +3073,7 @@ ngx_resolver_process_ptr(ngx_resolver_t *r, u_char *buf, size_t n,
     ngx_queue_t          *expire_queue;
     ngx_rbtree_t         *tree;
     ngx_resolver_an_t    *an;
-    ngx_resolver_ctx_t   *ctx, *next;
+    ngx_resolver_ctx_t   *ctx;
     ngx_resolver_node_t  *rn;
 #if (NGX_HAVE_INET6)
     uint32_t              hash;
@@ -3237,20 +3198,16 @@ valid:
     }
 
     if (code) {
-        next = rn->waiting;
-        rn->waiting = NULL;
-
         ngx_queue_remove(&rn->queue);
 
         ngx_rbtree_delete(tree, &rn->node);
 
-        /* unlock addr mutex */
+        while (rn->waiting) {
+            ctx = rn->waiting;
+            rn->waiting = ctx->next;
 
-        while (next) {
-            ctx = next;
             ctx->state = code;
             ctx->valid = ngx_time() + (r->valid ? r->valid : 10);
-            next = ctx->next;
 
             ctx->handler(ctx);
         }
@@ -3376,17 +3333,13 @@ ptr:
 
     ngx_queue_insert_head(expire_queue, &rn->queue);
 
-    next = rn->waiting;
-    rn->waiting = NULL;
+    while (rn->waiting) {
+        ctx = rn->waiting;
+        rn->waiting = ctx->next;
 
-    /* unlock addr mutex */
-
-    while (next) {
-        ctx = next;
         ctx->state = NGX_OK;
         ctx->valid = rn->valid;
         ctx->name = name;
-        next = ctx->next;
 
         ctx->handler(ctx);
     }
@@ -4213,6 +4166,23 @@ ngx_resolver_dup(ngx_resolver_t *r, void *src, size_t size)
     ngx_memcpy(dst, src, size);
 
     return dst;
+}
+
+
+static void
+ngx_resolver_link_waiting(ngx_resolver_t *r, ngx_resolver_node_t *rn,
+    ngx_resolver_ctx_t *ctx)
+{
+    ngx_resolver_ctx_t  *last;
+
+    for (last = ctx; last->next; last = last->next) {
+        last->node = rn;
+    }
+
+    last->node = rn;
+    last->next = rn->waiting;
+
+    rn->waiting = ctx;
 }
 
 
