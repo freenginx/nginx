@@ -2491,8 +2491,10 @@ ngx_http_v2_state_window_update(ngx_http_v2_connection_t *h2c, u_char *pos,
 
         stream = node->stream;
 
-        if (window > (size_t) (NGX_HTTP_V2_MAX_WINDOW - stream->send_window)) {
-
+        if (window > NGX_HTTP_V2_MAX_WINDOW
+            || stream->send_window
+               > (ssize_t) (NGX_HTTP_V2_MAX_WINDOW - window))
+        {
             ngx_log_error(NGX_LOG_INFO, h2c->connection->log, 0,
                           "client violated flow control for stream %ui: "
                           "received WINDOW_UPDATE frame "
@@ -2529,7 +2531,9 @@ ngx_http_v2_state_window_update(ngx_http_v2_connection_t *h2c, u_char *pos,
         return ngx_http_v2_state_complete(h2c, pos, end);
     }
 
-    if (window > NGX_HTTP_V2_MAX_WINDOW - h2c->send_window) {
+    if (window > NGX_HTTP_V2_MAX_WINDOW
+        || h2c->send_window > NGX_HTTP_V2_MAX_WINDOW - window)
+    {
         ngx_log_error(NGX_LOG_INFO, h2c->connection->log, 0,
                       "client violated connection flow control: "
                       "received WINDOW_UPDATE frame "
