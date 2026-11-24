@@ -336,7 +336,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
         }
     }
 
-    if (chain && c->write->ready && !c->write->delayed) {
+    if (chain && c->write->ready && !c->write->delayed && c->sent != sent) {
         ngx_post_event(c->write, &ngx_posted_next_events);
     }
 
