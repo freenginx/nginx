@@ -3191,6 +3191,42 @@ ngx_ssl_send_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                 continue;
             }
 
+            if (ngx_buf_size(in->buf) == 0) {
+                ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+                              "zero size buf in ssl send chain "
+                              "t:%d r:%d f:%d %p %p-%p %p %O-%O",
+                              in->buf->temporary,
+                              in->buf->recycled,
+                              in->buf->in_file,
+                              in->buf->start,
+                              in->buf->pos,
+                              in->buf->last,
+                              in->buf->file,
+                              in->buf->file_pos,
+                              in->buf->file_last);
+
+                ngx_debug_point();
+                return NGX_CHAIN_ERROR;
+            }
+
+            if (ngx_buf_size(in->buf) < 0) {
+                ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+                              "negative size buf in ssl send chain "
+                              "t:%d r:%d f:%d %p %p-%p %p %O-%O",
+                              in->buf->temporary,
+                              in->buf->recycled,
+                              in->buf->in_file,
+                              in->buf->start,
+                              in->buf->pos,
+                              in->buf->last,
+                              in->buf->file,
+                              in->buf->file_pos,
+                              in->buf->file_last);
+
+                ngx_debug_point();
+                return NGX_CHAIN_ERROR;
+            }
+
             n = ngx_ssl_write(c, in->buf->pos, in->buf->last - in->buf->pos);
 
             if (n == NGX_ERROR) {
@@ -3253,6 +3289,42 @@ ngx_ssl_send_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
             if (ngx_buf_special(in->buf)) {
                 in = in->next;
                 continue;
+            }
+
+            if (ngx_buf_size(in->buf) == 0) {
+                ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+                              "zero size buf in ssl send chain "
+                              "t:%d r:%d f:%d %p %p-%p %p %O-%O",
+                              in->buf->temporary,
+                              in->buf->recycled,
+                              in->buf->in_file,
+                              in->buf->start,
+                              in->buf->pos,
+                              in->buf->last,
+                              in->buf->file,
+                              in->buf->file_pos,
+                              in->buf->file_last);
+
+                ngx_debug_point();
+                return NGX_CHAIN_ERROR;
+            }
+
+            if (ngx_buf_size(in->buf) < 0) {
+                ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+                              "negative size buf in ssl send chain "
+                              "t:%d r:%d f:%d %p %p-%p %p %O-%O",
+                              in->buf->temporary,
+                              in->buf->recycled,
+                              in->buf->in_file,
+                              in->buf->start,
+                              in->buf->pos,
+                              in->buf->last,
+                              in->buf->file,
+                              in->buf->file_pos,
+                              in->buf->file_last);
+
+                ngx_debug_point();
+                return NGX_CHAIN_ERROR;
             }
 
             if (in->buf->in_file && c->ssl->sendfile) {
